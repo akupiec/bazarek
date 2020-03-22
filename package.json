@@ -1,0 +1,30 @@
+{
+  "name": "bazarek",
+  "version": "1.0.0",
+  "main": "src/bazar-games.ts",
+  "scripts": {
+    "build": "webpack -c webpack.config.js && chmod +x dist/gitlab-deployer",
+    "test": "npx ts-node src/index.ts --help"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^13.7.4",
+    "@types/yargs": "^15.0.4",
+    "axios": "^0.19.2",
+    "chalk": "^3.0.0",
+    "clui": "^0.3.6",
+    "inquirer": "^7.0.4",
+    "inquirer-autocomplete-prompt": "^1.0.2",
+    "jsdom": "^16.2.1",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.2",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "yaml": "^1.7.2",
+    "yargs": "^15.1.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.0.1"
+  }
+}
