@@ -54,7 +54,7 @@ export async function runSteamFetch(args) {
   let progress = 0;
 
   for (let [key, val] of steamDataMap) {
-    if (!val.tags) {
+    if (!val.tags && val.steamHref) {
       const promise = getSteamData(val.steamHref).then(
         (data) => {
           screenPrinter.updateProgressBar(1, progress++, END);

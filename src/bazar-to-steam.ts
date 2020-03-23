@@ -54,9 +54,11 @@ export async function runBazarToSteam(args) {
     }
     const promise = getSteamData(games[i]).then(
       (data) => {
-        steamDataMap.set(data.id, {
-          steamHref: data.steamHref,
-        });
+        if (data.steamHref) {
+          steamDataMap.set(data.id, {
+            steamHref: data.steamHref,
+          });
+        }
         screenPrinter.updateProgressBar(1, progress++, END);
         screenPrinter.updateMessage(1, `${progress} of ${END}`);
         return data;
