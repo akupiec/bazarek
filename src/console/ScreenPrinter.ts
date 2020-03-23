@@ -4,11 +4,13 @@ import * as chalk from 'chalk';
 import { Spinner } from '../utils/spinner';
 const clui = require('clui');
 const Progress = clui.Progress;
+const Line = clui.Line;
 
 enum LineType {
   String,
   Spinner,
   ProgressBar,
+  TableRow,
 }
 
 interface LineData {
@@ -48,10 +50,13 @@ export class ScreenPrinter {
       if (value.type === LineType.Spinner && !value.lineObj.isSpinning()) {
         value.lineObj.start(4, value.yOffset);
       }
-      if(value.type === LineType.ProgressBar) {
+      if (value.type === LineType.ProgressBar) {
         console.log(value.lineObj.update(value.lineObj.__progress));
         process.stdout.moveCursor(60, -1);
         console.log(value.message);
+      }
+      if (value.type === LineType.TableRow) {
+        value.lineObj.output();
       }
     });
   }
@@ -103,12 +108,32 @@ export class ScreenPrinter {
     }
   }
 
-  updateProgressBar(idx, curr:number, total: number) {
+  updateProgressBar(idx, curr: number, total: number) {
     const data = this.lineData[idx];
 
     if (data.type === LineType.ProgressBar) {
       data.lineObj.__progress = curr / total;
     }
     this.print();
+  }
+
+  addTableHeader(idx: number, strings: string[], length: number[]) {
+    strings = strings.map((s) => chalk.cyan(s));
+    this.addTableRow(idx, strings, length);
+  }
+
+  addTableRow(idx: number, strings: string[], length: number[]) {
+    if (this.lineData[idx]) {
+      ScreenPrinter.clearOldData(this.lineData[idx]);
+    }
+    this.lineData[idx] = {
+      yOffset: LOGO_HEIGHT + idx,
+      type: LineType.TableRow,
+      message: '',
+      lineObj: new Line(),
+    };
+
+    strings.forEach((s, i) => this.lineData[idx].lineObj.column(s, length[i]));
+    this.lineData[idx].lineObj.fill();
   }
 }

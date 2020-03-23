@@ -6,6 +6,7 @@ import { runBazarToSteam } from './bazar-to-steam';
 import { runSteamFetch } from './steam-data-fetch';
 import { runCleanSteam } from './clean-steam';
 import { runListTags } from './list-tags-steam';
+import {runList} from "./list-interesting-games";
 
 const bazarCommand: CommandModule = {
   command: 'bazar',
@@ -38,12 +39,20 @@ const ctCommand: CommandModule = {
   handler: (argv) => runListTags(argv),
 };
 
+const interestingCommand: CommandModule = {
+  command: 'show-interesting-offers',
+  aliases: ['show'],
+  describe: 'read and filters fetched data',
+  handler: (argv) => runList(argv),
+};
+
 yargs
   .command(bazarCommand)
   .command(mapLinksCommand)
   .command(steamCommand)
   .command(cleanCommand)
   .command(ctCommand)
+  .command(interestingCommand)
   .demandCommand(1, 'You need at least one command before moving on.')
   .help()
   .version(packageInfo.version).argv;
