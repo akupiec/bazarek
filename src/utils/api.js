@@ -1,5 +1,5 @@
 const MAX_REQUESTS_COUNT = 5;
-const INTERVAL_MS = 10;
+const INTERVAL_MS = 500;
 let PENDING_REQUESTS = 0;
 
 const axios = require('axios');

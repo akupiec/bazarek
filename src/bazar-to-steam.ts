@@ -12,23 +12,17 @@ const START = 0;
 const END = 0 || games.length;
 
 function getSteamData(data) {
-  return axios.get(`https://bazar.lowcygier.pl${data.href}`).then(
-    (resp) => {
-      const a = new JSDOM(resp.data);
-      const nodes = a.window.document.querySelectorAll('.uopo a[href]');
-      for (let i = 0; i < nodes.length; i++) {
-        if (nodes[i].href.includes('steam')) {
-          data.steamHref = nodes[i].href;
-          break;
-        }
+  return axios.get(`https://bazar.lowcygier.pl${data.href}`).then((resp) => {
+    const a = new JSDOM(resp.data);
+    const nodes = a.window.document.querySelectorAll('.uopo a[href]');
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].href.includes('steam')) {
+        data.steamHref = nodes[i].href;
+        break;
       }
-      return data;
-    },
-    (err) => {
-      console.error(err);
-      process.exit(-1);
-    },
-  );
+    }
+    return data;
+  });
 }
 
 function saveGameData(steamData: Map<number, any>, screenPrinter: ScreenPrinter) {
@@ -58,18 +52,20 @@ export async function runBazarToSteam(args) {
       screenPrinter.updateMessage(1, `${progress} of ${END}`);
       continue;
     }
-    const promise = getSteamData(games[i]).then((data) => {
-      steamDataMap.set(data.id, {
-        steamHref: data.steamHref,
-      });
-      screenPrinter.updateProgressBar(1, progress++, END);
-      screenPrinter.updateMessage(1, `${progress} of ${END}`);
-      return data;
-    });
+    const promise = getSteamData(games[i]).then(
+      (data) => {
+        steamDataMap.set(data.id, {
+          steamHref: data.steamHref,
+        });
+        screenPrinter.updateProgressBar(1, progress++, END);
+        screenPrinter.updateMessage(1, `${progress} of ${END}`);
+        return data;
+      },
+      (err) => screenPrinter.setErrorMessage(1, err),
+    );
     promises.push(promise);
   }
   screenPrinter.setSuccessMessage(0, 'saving....');
-
 
   //catches ctrl+c event
   process.on('SIGINT', () => {

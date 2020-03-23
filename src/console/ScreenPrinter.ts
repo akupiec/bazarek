@@ -56,6 +56,12 @@ export class ScreenPrinter {
     });
   }
 
+  setErrorMessage(idx: number, err: any) {
+    this.setSuccessMessage(idx, err);
+    this.lineData[idx].message = chalk.red('[ERROR] ' + err);
+    this.print();
+  }
+
   setSuccessMessage(idx: number, message: string) {
     if (this.lineData[idx]) {
       ScreenPrinter.clearOldData(this.lineData[idx]);

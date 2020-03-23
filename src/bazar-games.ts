@@ -5,8 +5,6 @@ const fs = require('fs');
 const { BAZAR_PATH } = require('./config');
 const { JSDOM } = require('jsdom');
 
-// document.querySelector('.popular_tags_ctn > div.glance_tags').textContent
-
 function getGameData(dom) {
   const listNode = dom.window.document.querySelectorAll('div.list-view > div .media-heading');
   const listPrices = dom.window.document.querySelectorAll('div.list-view > div p.prc');
