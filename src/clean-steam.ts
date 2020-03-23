@@ -1,4 +1,5 @@
-import { ScreenPrinter } from './console/ScreenPrinter';
+import {ScreenPrinter} from './console/ScreenPrinter';
+import {SteamMap} from "./interfaces/SteamMap";
 
 require('./utils/utils');
 
@@ -20,7 +21,7 @@ function getExistingSteamData(): Map<number, any> {
 
 export async function runCleanSteam(args) {
   const screenPrinter = new ScreenPrinter();
-  const steamDataMap = getExistingSteamData();
+  const steamDataMap: Map<number, SteamMap> = getExistingSteamData();
 
   const END = steamDataMap.size;
   screenPrinter.setSuccessMessage(0, `Cleaning....${END}`);
@@ -29,9 +30,9 @@ export async function runCleanSteam(args) {
   let progress = 0;
 
   for (let [key, val] of steamDataMap) {
-    steamDataMap.set(key, {
-      steamHref: val.steamHref,
-    });
+    if(!val.steamId) {
+      steamDataMap.delete(key);
+    }
     screenPrinter.updateProgressBar(1, progress++, END);
     screenPrinter.updateMessage(1, `${progress} of ${END}`);
   }

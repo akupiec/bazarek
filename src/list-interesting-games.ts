@@ -1,5 +1,5 @@
 import { ScreenPrinter } from './console/ScreenPrinter';
-import { BAZAR_PATH } from './config';
+import {BAZAR_PATH, OWNED_GAMES} from './config';
 import { Bazar } from './interfaces/Bazar';
 import { SteamMap } from './interfaces/SteamMap';
 import { Categories } from './interfaces/Categories';
@@ -12,6 +12,7 @@ const fs = require('fs');
 const { STEAM_DATA_PATH } = require('./config');
 
 const steamDataMap: Map<number, SteamMap> = new Map(JSON.parse(fs.readFileSync(STEAM_DATA_PATH)));
+const ownedGames: number[] = JSON.parse(fs.readFileSync(OWNED_GAMES));
 
 function combineSteamAndBazar(game: Bazar): BazarSteam {
   return { ...game, ...steamDataMap.get(game.id) } as BazarSteam;
@@ -59,6 +60,14 @@ function printableObj(game: BazarSteam) {
   ];
 }
 
+function onlyUniq(game: Bazar, idx: number, array: Bazar[]) {
+  return array.findIndex((g) => g.id === game.id) === idx;
+}
+
+function notOwned(game: BazarSteam) {
+  return !ownedGames.includes(game.steamId)
+}
+
 export async function runList(args) {
   const screenPrinter = new ScreenPrinter();
   const bazar: Bazar[] = JSON.parse(fs.readFileSync(BAZAR_PATH));
@@ -66,8 +75,10 @@ export async function runList(args) {
   screenPrinter.setSuccessMessage(0, `Serching....`);
 
   const interesting = bazar
+    .filter(onlyUniq)
     .map(mapZlToNumber)
     .map(combineSteamAndBazar)
+    .filter(notOwned)
     .filter(onlyPositive)
     .filter(partialController)
     .filter(localMultiplayer)
@@ -80,10 +91,9 @@ export async function runList(args) {
   }
   screenPrinter.setSuccessMessage(0, 'Results:');
   const sizes = [40, 7, 28, 50];
-  screenPrinter.addTableHeader(1, ['name', 'price', 'reviews', 'href'], sizes);
+  screenPrinter.addTableHeader(1, ['NAME', 'PRICE', 'REVIEWS', 'LINKS'], sizes);
   interesting.forEach((i, index) => {
     screenPrinter.addTableRow(index + 2, i, sizes);
   });
   screenPrinter.setSuccessMessage(interesting.length + 3, 'Total: ' + interesting.length);
-  screenPrinter.print();
 }

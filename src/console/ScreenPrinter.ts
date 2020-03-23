@@ -37,6 +37,7 @@ export class ScreenPrinter {
     if (data.type === LineType.Spinner) {
       data.lineObj.stop();
       data.lineObj = undefined;
+      data.type = LineType.String;
     }
   }
 
@@ -118,7 +119,7 @@ export class ScreenPrinter {
   }
 
   addTableHeader(idx: number, strings: string[], length: number[]) {
-    strings = strings.map((s) => chalk.cyan(s));
+    strings = strings.map((s) => chalk.cyan.bold(s));
     this.addTableRow(idx, strings, length);
   }
 
@@ -134,6 +135,5 @@ export class ScreenPrinter {
     };
 
     strings.forEach((s, i) => this.lineData[idx].lineObj.column(s, length[i]));
-    this.lineData[idx].lineObj.fill();
   }
 }

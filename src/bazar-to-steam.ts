@@ -14,13 +14,11 @@ const END = 0 || games.length;
 function getSteamData(data) {
   return axios.get(`https://bazar.lowcygier.pl${data.href}`).then((resp) => {
     const a = new JSDOM(resp.data);
-    const nodes = a.window.document.querySelectorAll('.uopo a[href]');
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i].href.includes('steam')) {
-        data.steamHref = nodes[i].href;
-        break;
-      }
-    }
+    const nodes = a.window.document.querySelectorAll('a[href]') as any[];
+    const steamNode = Array.from(nodes).filter(n => n.href).find(n => n.href.includes('steam'));
+    data.steamHref = steamNode && steamNode.href || null;
+    const regExpMatchArray = data.steamHref.match(/\d+/);
+    data.steamId = parseInt(regExpMatchArray && regExpMatchArray[0]);
     return data;
   });
 }
@@ -57,6 +55,7 @@ export async function runBazarToSteam(args) {
         if (data.steamHref) {
           steamDataMap.set(data.id, {
             steamHref: data.steamHref,
+            steamId: data.steamId,
           });
         }
         screenPrinter.updateProgressBar(1, progress++, END);
