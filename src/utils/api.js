@@ -1,5 +1,5 @@
-const MAX_REQUESTS_COUNT = 15;
-const INTERVAL_MS = 10;
+const MAX_REQUESTS_COUNT = 5;
+const INTERVAL_MS = 300;
 let PENDING_REQUESTS = 0;
 
 const axios = require('axios');
@@ -9,7 +9,7 @@ const api = axios.create();
  * Axios Request Interceptor
  */
 api.interceptors.request.use(function (config) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let interval = setInterval(() => {
             if (PENDING_REQUESTS < MAX_REQUESTS_COUNT) {
                 PENDING_REQUESTS++;

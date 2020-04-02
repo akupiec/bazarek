@@ -10,39 +10,39 @@ import {runList} from "./list-interesting-games";
 
 const bazarCommand: CommandModule = {
   command: 'bazar',
-  describe: 'fetch bazar data',
+  describe: '1. fetch bazar data',
   handler: (argv) => runBazar(argv),
 };
 
 const mapLinksCommand: CommandModule = {
   command: 'links',
-  describe: 'fetch steam links based on bazar data',
+  describe: '2. fetch steam links based on bazar data',
   handler: (argv) => runBazarToSteam(argv),
 };
 
 const steamCommand: CommandModule = {
   command: 'steam',
-  describe: 'fetch steam tags & reviews',
+  describe: '3. fetch steam tags & reviews',
   handler: (argv) => runSteamFetch(argv),
 };
 
 const cleanCommand: CommandModule = {
   command: 'clean',
-  describe: 'clean steam data',
+  describe: 'x. clean steam data',
   handler: (argv) => runCleanSteam(argv),
 };
 
 const ctCommand: CommandModule = {
   command: 'create-tags-list',
   aliases: ['ct'],
-  describe: 'create tag & categories lists',
+  describe: '4. create tag & categories lists',
   handler: (argv) => runListTags(argv),
 };
 
 const interestingCommand: CommandModule = {
   command: 'show-interesting-offers',
   aliases: ['show'],
-  describe: 'read and filters fetched data',
+  describe: '5. read and filters fetched data',
   handler: (argv) => runList(argv),
 };
 
@@ -50,9 +50,9 @@ yargs
   .command(bazarCommand)
   .command(mapLinksCommand)
   .command(steamCommand)
-  .command(cleanCommand)
   .command(ctCommand)
   .command(interestingCommand)
+  .command(cleanCommand)
   .demandCommand(1, 'You need at least one command before moving on.')
   .help()
   .version(packageInfo.version).argv;

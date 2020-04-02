@@ -1,10 +1,11 @@
 import { ScreenPrinter } from './console/ScreenPrinter';
-import {BAZAR_PATH, OWNED_GAMES} from './config';
+import { BAZAR_PATH } from './config';
 import { Bazar } from './interfaces/Bazar';
 import { SteamMap } from './interfaces/SteamMap';
 import { Categories } from './interfaces/Categories';
 import { BazarSteam } from './interfaces/BazarSteam';
 import { Reviews, reviewToNr } from './interfaces/Reviews';
+import { NOT_INTERESTING, OWNED } from '../data/ignored-games';
 
 require('./utils/utils');
 
@@ -12,7 +13,6 @@ const fs = require('fs');
 const { STEAM_DATA_PATH } = require('./config');
 
 const steamDataMap: Map<number, SteamMap> = new Map(JSON.parse(fs.readFileSync(STEAM_DATA_PATH)));
-const ownedGames: number[] = JSON.parse(fs.readFileSync(OWNED_GAMES));
 
 function combineSteamAndBazar(game: Bazar): BazarSteam {
   return { ...game, ...steamDataMap.get(game.id) } as BazarSteam;
@@ -35,6 +35,14 @@ function partialController(game: BazarSteam) {
   );
 }
 
+function pricyNotAwsome(game: BazarSteam) {
+  return (
+    game.price < 10 ||
+    game.reviewSummary === Reviews.OVERWHELMINGLY_POSITIVE ||
+    game.reviewSummary === Reviews.MOSTLY_POSITIVE
+  );
+}
+
 function localMultiplayer(game: BazarSteam) {
   return game.tags && game.tags.find((t) => t.includes('Local'));
 }
@@ -51,24 +59,32 @@ function sortSteamBazar(a: BazarSteam, b: BazarSteam) {
   return sortByPrice(a, b) === 0 ? sortByReview(a, b) : sortByPrice(a, b);
 }
 
+function onlyUniq(game: Bazar, idx: number, array: Bazar[]) {
+  return array.findIndex((g) => g.id === game.id) === idx;
+}
+
+function excludeOwned(game: BazarSteam) {
+  return !OWNED.includes(game.steamId + '');
+}
+
+function excludeNotInteresting(game: BazarSteam) {
+  return !(
+    NOT_INTERESTING.includes('' + game.steamId) ||
+    NOT_INTERESTING.find((n) => game.text.includes(n))
+  );
+}
+
 function printableObj(game: BazarSteam) {
   return [
     game.text,
     game.price.toString(),
     game.reviewSummary,
+    // game.steamHref,
     'https://bazar.lowcygier.pl' + game.href,
   ];
 }
 
-function onlyUniq(game: Bazar, idx: number, array: Bazar[]) {
-  return array.findIndex((g) => g.id === game.id) === idx;
-}
-
-function notOwned(game: BazarSteam) {
-  return !ownedGames.includes(game.steamId)
-}
-
-export async function runList(args) {
+export async function runList() {
   const screenPrinter = new ScreenPrinter();
   const bazar: Bazar[] = JSON.parse(fs.readFileSync(BAZAR_PATH));
 
@@ -78,10 +94,12 @@ export async function runList(args) {
     .filter(onlyUniq)
     .map(mapZlToNumber)
     .map(combineSteamAndBazar)
-    .filter(notOwned)
+    .filter(excludeOwned)
+    .filter(excludeNotInteresting)
     .filter(onlyPositive)
     .filter(partialController)
     .filter(localMultiplayer)
+    .filter(pricyNotAwsome)
     .sort(sortSteamBazar)
     .map(printableObj);
 

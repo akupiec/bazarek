@@ -15,7 +15,7 @@ function getSteamData(data) {
   return axios.get(`https://bazar.lowcygier.pl${data.href}`).then((resp) => {
     const a = new JSDOM(resp.data);
     const nodes = a.window.document.querySelectorAll('a[href]') as any[];
-    const steamNode = Array.from(nodes).filter(n => n.href).find(n => n.href.includes('steam'));
+    const steamNode = Array.from(nodes).filter(n => n.href).find(n => n.href.includes('store.steam'));
     data.steamHref = steamNode && steamNode.href || null;
     const regExpMatchArray = data.steamHref.match(/\d+/);
     data.steamId = parseInt(regExpMatchArray && regExpMatchArray[0]);
@@ -34,7 +34,7 @@ function getExistingSteamData(): Map<number, any> {
   }
   return new Map();
 }
-export async function runBazarToSteam(args) {
+export async function runBazarToSteam() {
   const screenPrinter = new ScreenPrinter();
   screenPrinter.setSuccessMessage(0, `Downloading....${END - START}`);
   const steamDataMap = getExistingSteamData();
