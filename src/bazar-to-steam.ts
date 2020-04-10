@@ -17,6 +17,10 @@ function getSteamData(data) {
     const nodes = a.window.document.querySelectorAll('a[href]') as any[];
     const steamNode = Array.from(nodes).filter(n => n.href).find(n => n.href.includes('store.steam'));
     data.steamHref = steamNode && steamNode.href || null;
+    if (!data.steamHref) {
+      console.log('missing steamHref');
+      return data;
+    }
     const regExpMatchArray = data.steamHref.match(/\d+/);
     data.steamId = parseInt(regExpMatchArray && regExpMatchArray[0]);
     return data;

@@ -1,5 +1,5 @@
 import { ScreenPrinter } from './console/ScreenPrinter';
-import { STEAM_CATEGORIES, STEAM_REVIEWS, STEAM_TAGS } from './config';
+import { STEAM_CATEGORIES, STEAM_TAGS } from './config';
 
 require('./utils/utils');
 
@@ -23,7 +23,7 @@ function jsonToEnum(name: string, data: Set<string>) {
   return `export enum ${name} {\n${enums}\n}`;
 }
 
-export async function runListTags(args) {
+export async function runListTags() {
   const screenPrinter = new ScreenPrinter();
   const steamDataMap = getExistingSteamData();
 
@@ -35,7 +35,7 @@ export async function runListTags(args) {
   screenPrinter.setProgressBar(1, `${0} of ${END}`);
   let progress = 0;
 
-  for (let [key, val] of steamDataMap) {
+  for (let [, val] of steamDataMap) {
     if (val.tags) val.tags.forEach((t) => tags.add(t));
     if (val.categories) val.categories.forEach((c) => categories.add(c));
     if (val.reviewSummary) reviews.add(val.reviewSummary);
@@ -45,5 +45,5 @@ export async function runListTags(args) {
 
   fs.writeFileSync(STEAM_TAGS, JSON.stringify(Array.from(tags)));
   fs.writeFileSync(STEAM_CATEGORIES, jsonToEnum('Categories', categories));
-  fs.writeFileSync(STEAM_REVIEWS, jsonToEnum('Reviews', reviews));
+  // fs.writeFileSync(STEAM_REVIEWS, jsonToEnum('Reviews', reviews));
 }

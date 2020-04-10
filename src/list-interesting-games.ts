@@ -79,8 +79,8 @@ function printableObj(game: BazarSteam) {
     game.text,
     game.price.toString(),
     game.reviewSummary,
-    // game.steamHref,
-    'https://bazar.lowcygier.pl' + game.href,
+    game.steamHref,
+    // 'https://bazar.lowcygier.pl' + game.href,
   ];
 }
 
