@@ -6,6 +6,7 @@ import { Categories } from './interfaces/Categories';
 import { BazarSteam } from './interfaces/BazarSteam';
 import { Reviews, reviewToNr } from './interfaces/Reviews';
 import { NOT_INTERESTING, OWNED } from '../data/ignored-games';
+import { GIVEAWAY_KEYS } from '../data/crap-budle';
 
 require('./utils/utils');
 
@@ -43,8 +44,18 @@ function pricyNotAwsome(game: BazarSteam) {
   );
 }
 
-function localMultiplayer(game: BazarSteam) {
-  return game.tags && game.tags.find((t) => t.includes('Local'));
+function byTagsIncludes(tags: string[]) {
+  return (game: BazarSteam) => {
+    if (!game.tags) return false;
+    return game.tags.find((gameTag) => tags.find((t) => gameTag.includes(t)));
+  };
+}
+
+function byTagsExcluded(tags: string[]) {
+  return (game: BazarSteam) => {
+    if (!game.tags) return false;
+    return !byTagsIncludes(tags)(game);
+  };
 }
 
 function sortSteamBazar(a: BazarSteam, b: BazarSteam) {
@@ -74,6 +85,14 @@ function excludeNotInteresting(game: BazarSteam) {
   );
 }
 
+function onlyGiveaway(game: BazarSteam) {
+  return GIVEAWAY_KEYS.find(name => game.text.includes(name));
+}
+
+function excludeInGamePurchases(game: BazarSteam) {
+  return !game.categories.includes(Categories.IN_APP_PURCHASES);
+}
+
 function printableObj(game: BazarSteam) {
   return [
     game.text,
@@ -94,11 +113,14 @@ export async function runList() {
     .filter(onlyUniq)
     .map(mapZlToNumber)
     .map(combineSteamAndBazar)
+    // .filter(onlyGiveaway)
     .filter(excludeOwned)
     .filter(excludeNotInteresting)
     .filter(onlyPositive)
+    // .filter(excludeInGamePurchases)
+    // .filter(byTagsIncludes(['Management']))
     .filter(partialController)
-    .filter(localMultiplayer)
+    .filter(byTagsIncludes(['Local']))
     .filter(pricyNotAwsome)
     .sort(sortSteamBazar)
     .map(printableObj);
@@ -111,7 +133,8 @@ export async function runList() {
   const sizes = [40, 7, 28, 50];
   screenPrinter.addTableHeader(1, ['NAME', 'PRICE', 'REVIEWS', 'LINKS'], sizes);
   interesting.forEach((i, index) => {
-    screenPrinter.addTableRow(index + 2, i, sizes);
+    const colData = i.map(col => col || '');
+    screenPrinter.addTableRow(index + 2, colData, sizes);
   });
   screenPrinter.setSuccessMessage(interesting.length + 3, 'Total: ' + interesting.length);
 }

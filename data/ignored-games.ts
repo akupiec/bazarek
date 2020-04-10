@@ -1,4 +1,6 @@
+// https://steamcommunity.com/profiles/76561198063008000/games/?tab=all
 // Array.from($x('//*[@id="games_list_rows"]')[0].children).map(i => i.id).map(i => i.match(/\d+/)[0])
+
 export const OWNED = [
   '291550',
   '255710',
@@ -10,6 +12,7 @@ export const OWNED = [
   '599140',
   '233450',
   '8500',
+  '109600',
   '230410',
   '495910',
   '438040',
@@ -37,6 +40,7 @@ export const OWNED = [
   '620590',
   '317470',
   '750920',
+  '504210',
   '589870',
   '505730',
   '274190',
@@ -48,8 +52,8 @@ export const OWNED = [
   '788770',
   '550470',
   '351640',
-  '55150',
   '369990',
+  '55150',
   '513560',
   '304930',
   '368950',
@@ -58,9 +62,11 @@ export const OWNED = [
   '557400',
   '683670',
   '363600',
+  '250110',
+  '400450',
   '516510',
-  '700480',
   '212390',
+  '700480',
   '774361',
   '456200',
   '563850',
@@ -70,16 +76,25 @@ export const OWNED = [
   '1125020',
   '587670',
   '241930',
-  '400450',
   '511800',
+  '640820',
   '400',
   '611500',
   '250740',
   '453480',
+  '396710',
   '429881',
+  '408410',
 ];
 
 export const NOT_INTERESTING = [
+  // owned
+  'Aegis Defenders',
+
+  //gived out
+  'Horizon Chase Turbo',
+
+  // not interesting
   'Regular Human Basketball',
   'Timberman',
   'Override: Mech City Brawl',
@@ -101,4 +116,12 @@ export const NOT_INTERESTING = [
   'Demons with Shotguns',
   'Arcana Heart 3 LOVE MAX!!!!!',
   'ROCKETSROCKETSROCKETS',
+  '12 Labours of Hercules',
+  'RollerCoaster Tycoon 2',
+  'Airline Tycoon Deluxe',
+  'Among the Heavens',
+  'Knights and Merchants',
+  'Shoppe Keep',
+  'Euro Truck Simulator',
+  'Sunrider Academy',
 ];
