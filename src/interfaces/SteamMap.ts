@@ -8,4 +8,5 @@ export interface SteamMap {
   reviewSummary: Reviews | string;
   responses: string;
   categories: Categories[];
+  updateDate?: string;
 }

@@ -1,4 +1,6 @@
 import { ScreenPrinter } from './console/ScreenPrinter';
+import { SteamMap } from './interfaces/SteamMap';
+import * as moment from 'moment';
 
 require('./utils/utils');
 const axios = require('./utils/api');
@@ -7,7 +9,7 @@ const fs = require('fs');
 const { STEAM_DATA_PATH } = require('./config');
 const { JSDOM } = require('jsdom');
 
-function getSteamData(href) {
+function getSteamData(href): Promise<SteamMap> {
   return axios.get(href).then((resp) => {
     const a = new JSDOM(resp.data);
     const tagsNode = a.window.document.querySelector('.popular_tags_ctn > div.glance_tags');
@@ -36,7 +38,7 @@ function saveGameData(steamData: Map<number, any>, screenPrinter: ScreenPrinter)
   process.exit(1);
 }
 
-function getExistingSteamData(): Map<number, any> {
+function getExistingSteamData(): Map<number, SteamMap> {
   if (fs.existsSync(STEAM_DATA_PATH)) {
     return new Map(JSON.parse(fs.readFileSync(STEAM_DATA_PATH)));
   }
@@ -53,8 +55,11 @@ export async function runSteamFetch(args) {
   let promises = [];
   let progress = 0;
 
+  const yesterday = moment().subtract(1, 'day').startOf('day');
   for (let [key, val] of steamDataMap) {
-    if (!val.tags && val.steamHref) {
+    const shouldUpdate =
+      val.steamHref && (!val.updateDate || moment(val.updateDate).isBefore(yesterday));
+    if (shouldUpdate) {
       const promise = getSteamData(val.steamHref).then(
         (data) => {
           screenPrinter.updateProgressBar(1, progress++, END);
@@ -63,9 +68,16 @@ export async function runSteamFetch(args) {
           val.reviewSummary = data.reviewSummary;
           val.responses = data.responses;
           val.categories = data.categories;
+          val.updateDate = moment().format();
           steamDataMap.set(key, val);
         },
-        (err) => screenPrinter.setErrorMessage(1, err),
+        (err) => {
+          if (err.errno === 'ENOTFOUND') {
+            screenPrinter.setErrorMessage(1, `${err.message} ${err.config.url}`);
+          } else {
+            screenPrinter.setErrorMessage(1, err);
+          }
+        },
       );
       promises.push(promise);
     } else {
