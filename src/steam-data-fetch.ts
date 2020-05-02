@@ -10,7 +10,7 @@ const { STEAM_DATA_PATH } = require('./config');
 const { JSDOM } = require('jsdom');
 
 function getSteamData(href): Promise<SteamMap> {
-  return axios.get(href).then((resp) => {
+  return axios.get(href, { retry: 3, retryDelay: 3000 }).then((resp) => {
     const a = new JSDOM(resp.data);
     const tagsNode = a.window.document.querySelector('.popular_tags_ctn > div.glance_tags');
     const tagsStr = (tagsNode && tagsNode.textContent) || '';

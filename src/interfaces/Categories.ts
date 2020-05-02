@@ -27,9 +27,9 @@ export enum Categories {
   INCLUDES_SOURCE_SDK = 'Includes Source SDK',
   COMMENTARY_AVAILABLE = 'Commentary available',
   STEAMVR_COLLECTIBLES = 'SteamVR Collectibles',
-  STEAM_IS_LEARNING_ABOUT_THIS_GAME = 'Steam is learning about this game',
   STEAM_TURN_NOTIFICATIONS = 'Steam Turn Notifications',
   LAN_PVP = 'LAN PvP',
   LAN_CO_OP = 'LAN Co-op',
   ADDITIONAL_HIGH_QUALITY_AUDIO = 'Additional High-Quality Audio',
+  STEAM_IS_LEARNING_ABOUT_THIS_GAME = 'Steam is learning about this game',
 }
