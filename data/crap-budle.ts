@@ -1,19 +1,5 @@
 // Array.from(document.querySelectorAll('.content-choice-tiles .content-choice-title')).map(i => i.textContent).map(i => i.trim())
 export const GIVEAWAY_KEYS = [
-  // april
-  // 'HITMAN 2',
-  // 'GRIS',
-  // 'This Is the Police 2',
-  // 'Opus Magnum',
-  // 'MOLEK-SYNTEZ',
-  // 'Raiden V: Director\'s Cut | 雷電 V Director\'s Cut | 雷電V:導演剪輯版',
-  // 'Driftland: The Magic Revival',
-  // 'Turok 2: Seeds of Evil',
-  // 'Truberbrook / Trüberbrook',
-  // 'The Bard\'s Tale IV: Director\'s Cut',
-  // 'Shoppe Keep 2',
-  // 'Capitalism 2',
-
   // march
   'My Friend Pedro',
   'Planet Coaster + 1 DLC',

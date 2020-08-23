@@ -118,9 +118,9 @@ export async function runList() {
     .filter(excludeNotInteresting)
     .filter(onlyPositive)
     // .filter(excludeInGamePurchases)
-    // .filter(byTagsIncludes(['Management']))
-    .filter(partialController)
-    .filter(byTagsIncludes(['Local']))
+    .filter(byTagsIncludes(['Hack and Slash']))
+    // .filter(byTagsIncludes(['Local']))
+    // .filter(partialController)
     .filter(pricyNotAwsome)
     .sort(sortSteamBazar)
     .map(printableObj);

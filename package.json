@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "src/bazar-games.ts",
   "scripts": {
-    "build": "webpack -c webpack.config.js && chmod +x dist/gitlab-deployer",
-    "test": "npx ts-node src/index.ts --help"
+    "test": "ts-node src/index.ts --help"
   },
   "license": "MIT",
   "dependencies": {
