@@ -1,7 +1,7 @@
 import { ScreenPrinter } from '../console/ScreenPrinter';
 import { STEAM_CATEGORIES, STEAM_TAGS } from '../config';
 
-require('./utils/utils');
+require('../utils/utils');
 
 const fs = require('fs');
 const { STEAM_DATA_PATH } = require('../config');

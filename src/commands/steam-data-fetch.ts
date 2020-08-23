@@ -2,7 +2,7 @@ import { ScreenPrinter } from '../console/ScreenPrinter';
 import { SteamMap } from '../interfaces/SteamMap';
 import * as moment from 'moment';
 
-require('./utils/utils');
+require('../utils/utils');
 const axios = require('../utils/api');
 
 const fs = require('fs');

@@ -1,6 +1,6 @@
 import { ScreenPrinter } from '../console/ScreenPrinter';
 
-require('./utils/utils');
+require('../utils/utils');
 const axios = require('../utils/api');
 
 const fs = require('fs');

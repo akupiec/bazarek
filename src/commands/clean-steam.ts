@@ -1,7 +1,7 @@
 import { ScreenPrinter } from '../console/ScreenPrinter';
 import { SteamMap } from '../interfaces/SteamMap';
 
-require('./utils/utils');
+require('../utils/utils');
 
 const fs = require('fs');
 const { STEAM_DATA_PATH } = require('../config');
