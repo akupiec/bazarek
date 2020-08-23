@@ -1,10 +1,10 @@
-import { ScreenPrinter } from './console/ScreenPrinter';
+import { ScreenPrinter } from '../console/ScreenPrinter';
 
 require('./utils/utils');
-const axios = require('./utils/api');
+const axios = require('../utils/api');
 
 const fs = require('fs');
-const { BAZAR_PATH, STEAM_DATA_PATH } = require('./config');
+const { BAZAR_PATH, STEAM_DATA_PATH } = require('../config');
 const { JSDOM } = require('jsdom');
 
 const games = JSON.parse(fs.readFileSync(BAZAR_PATH));

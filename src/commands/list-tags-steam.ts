@@ -1,10 +1,10 @@
-import { ScreenPrinter } from './console/ScreenPrinter';
-import { STEAM_CATEGORIES, STEAM_TAGS } from './config';
+import { ScreenPrinter } from '../console/ScreenPrinter';
+import { STEAM_CATEGORIES, STEAM_TAGS } from '../config';
 
 require('./utils/utils');
 
 const fs = require('fs');
-const { STEAM_DATA_PATH } = require('./config');
+const { STEAM_DATA_PATH } = require('../config');
 
 function getExistingSteamData(): Map<number, any> {
   if (fs.existsSync(STEAM_DATA_PATH)) {

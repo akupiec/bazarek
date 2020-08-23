@@ -1,12 +1,12 @@
-import { ScreenPrinter } from './console/ScreenPrinter';
-import { SteamMap } from './interfaces/SteamMap';
+import { ScreenPrinter } from '../console/ScreenPrinter';
+import { SteamMap } from '../interfaces/SteamMap';
 import * as moment from 'moment';
 
 require('./utils/utils');
-const axios = require('./utils/api');
+const axios = require('../utils/api');
 
 const fs = require('fs');
-const { STEAM_DATA_PATH } = require('./config');
+const { STEAM_DATA_PATH } = require('../config');
 const { JSDOM } = require('jsdom');
 
 function getSteamData(href): Promise<SteamMap> {

@@ -1,17 +1,17 @@
-import { ScreenPrinter } from './console/ScreenPrinter';
-import { BAZAR_PATH } from './config';
-import { Bazar } from './interfaces/Bazar';
-import { SteamMap } from './interfaces/SteamMap';
-import { Categories } from './interfaces/Categories';
-import { BazarSteam } from './interfaces/BazarSteam';
-import { Reviews, reviewToNr } from './interfaces/Reviews';
-import { NOT_INTERESTING, OWNED } from '../data/ignored-games';
-import { GIVEAWAY_KEYS } from '../data/crap-budle';
+import { ScreenPrinter } from '../console/ScreenPrinter';
+import { BAZAR_PATH } from '../config';
+import { Bazar } from '../interfaces/Bazar';
+import { SteamMap } from '../interfaces/SteamMap';
+import { Categories } from '../interfaces/Categories';
+import { BazarSteam } from '../interfaces/BazarSteam';
+import { Reviews, reviewToNr } from '../interfaces/Reviews';
+import { NOT_INTERESTING, OWNED } from '../../data/ignored-games';
+import { GIVEAWAY_KEYS } from '../../data/crap-budle';
 
 require('./utils/utils');
 
 const fs = require('fs');
-const { STEAM_DATA_PATH } = require('./config');
+const { STEAM_DATA_PATH } = require('../config');
 
 const steamDataMap: Map<number, SteamMap> = new Map(JSON.parse(fs.readFileSync(STEAM_DATA_PATH)));
 

@@ -1,7 +1,7 @@
 {
   "name": "bazarek",
   "version": "1.0.0",
-  "main": "src/bazar-games.ts",
+  "main": "src/commands/bazar-games.ts",
   "scripts": {
     "test": "ts-node src/index.ts --help"
   },

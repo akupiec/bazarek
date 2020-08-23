@@ -1,8 +1,8 @@
-import {ScreenPrinter} from "./console/ScreenPrinter";
+import { ScreenPrinter } from '../console/ScreenPrinter';
 
 const axios = require('axios');
 const fs = require('fs');
-const { BAZAR_PATH } = require('./config');
+const { BAZAR_PATH } = require('../config');
 const { JSDOM } = require('jsdom');
 
 function getGameData(dom) {
