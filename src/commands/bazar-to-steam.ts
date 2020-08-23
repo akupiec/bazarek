@@ -38,7 +38,8 @@ function getExistingSteamData(): Map<number, any> {
   }
   return new Map();
 }
-export async function runBazarToSteam() {
+
+export async function runSteam() {
   const screenPrinter = new ScreenPrinter();
   screenPrinter.setSuccessMessage(0, `Downloading....${END - START}`);
   const steamDataMap = getExistingSteamData();

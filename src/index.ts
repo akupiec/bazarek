@@ -2,22 +2,23 @@ import * as packageInfo from '../package.json';
 import * as yargs from 'yargs';
 import { CommandModule } from 'yargs';
 import { runBazar } from './commands/bazar-games';
-import { runBazarToSteam } from './commands/bazar-to-steam';
+import { runSteam } from './commands/bazar-to-steam';
 import { runSteamFetch } from './commands/steam-data-fetch';
 import { runCleanSteam } from './commands/clean-steam';
 import { runListTags } from './commands/list-tags-steam';
 import { runList } from './commands/list-interesting-games';
+import { runWishList } from './commands/list-wishlist-games';
 
 const bazarCommand: CommandModule = {
   command: 'bazar',
-  describe: '1. fetch bazar data',
+  describe: '1. fetch bazar data (all)',
   handler: (argv) => runBazar(argv),
 };
 
 const mapLinksCommand: CommandModule = {
   command: 'links',
-  describe: '2. fetch steam links based on bazar data',
-  handler: () => runBazarToSteam(),
+  describe: '2. fetch steam games (bazar + wishList)',
+  handler: () => runSteam(),
 };
 
 const steamCommand: CommandModule = {
@@ -46,12 +47,20 @@ const interestingCommand: CommandModule = {
   handler: () => runList(),
 };
 
+const wishListCommand: CommandModule = {
+  command: 'show-wishlist-offers',
+  aliases: ['wish'],
+  describe: '5. read and filters fetched data',
+  handler: () => runWishList(),
+};
+
 yargs
   .command(bazarCommand)
   .command(mapLinksCommand)
   .command(steamCommand)
   .command(ctCommand)
   .command(interestingCommand)
+  .command(wishListCommand)
   .command(cleanCommand)
   .demandCommand(1, 'You need at least one command before moving on.')
   .help()

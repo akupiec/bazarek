@@ -3,6 +3,7 @@ import { Categories } from '../../interfaces/Categories';
 import { Reviews, reviewToNr } from '../../interfaces/Reviews';
 import { NOT_INTERESTING, OWNED } from '../../../data/ignored-games';
 import { GIVEAWAY_KEYS } from '../../../data/crap-budle';
+import { WISH_LIST } from '../../../data/wish-list';
 
 export function onlyPositive(game: BazarSteam) {
   return game.reviewSummary && game.reviewSummary.includes('Positive');
@@ -62,6 +63,10 @@ export function excludeNotInteresting(game: BazarSteam) {
 
 export function onlyGiveaway(game: BazarSteam) {
   return GIVEAWAY_KEYS.find(name => game.text.includes(name));
+}
+
+export function onlyWishList(game: BazarSteam) {
+  return WISH_LIST.find(name => game.text.includes(name));
 }
 
 export function excludeInGamePurchases(game: BazarSteam) {

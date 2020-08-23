@@ -10,9 +10,9 @@ import {
   excludeOwned,
   onlyGiveaway,
   onlyPositive,
+  onlyWishList,
   partialController,
   pricyNotAwsome,
-  printableObj,
   sortSteamBazar,
 } from './mappers';
 
@@ -101,11 +101,12 @@ export class BazarSteamBuilder {
     return this;
   }
 
-  getBazar(): BazarSteam[] {
-    return this.bazarSteam;
+  onlyWishList() {
+    this.bazarSteam = this.bazarSteam.filter(onlyWishList);
+    return this;
   }
 
-  getPritable(): string[][] {
-    return this.bazarSteam.map(printableObj);
+  getBazar(): BazarSteam[] {
+    return this.bazarSteam;
   }
 }

@@ -1,6 +1,6 @@
 // https://store.steampowered.com/wishlist/profiles/76561198063008000/#sort=order
 //$x(`//*[@id="wishlist_ctn"]//a[@class="title"]`).map(a => a.text.trim())
-export const WANT_LIST = [
+export const WISH_LIST = [
   'Styx: Master of Shadows',
   'No Man\'s Sky',
   'RimWorld',
