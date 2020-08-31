@@ -8,6 +8,7 @@ import { runCleanSteam } from './commands/clean-steam';
 import { runListTags } from './commands/list-tags-steam';
 import { runList } from './commands/list-interesting-games';
 import { runWishList } from './commands/list-wishlist-games';
+import { runGiveaway } from './commands/list-giveaway-games';
 
 const bazarCommand: CommandModule = {
   command: 'bazar',
@@ -17,7 +18,7 @@ const bazarCommand: CommandModule = {
 
 const mapLinksCommand: CommandModule = {
   command: 'links',
-  describe: '2. fetch steam games (bazar + wishList)',
+  describe: '2. create steam game list (bazar + wishList)',
   handler: () => runSteam(),
 };
 
@@ -29,7 +30,7 @@ const steamCommand: CommandModule = {
 
 const cleanCommand: CommandModule = {
   command: 'clean',
-  describe: 'x. clean steam data',
+  describe: 'x. clean old steam data',
   handler: (argv) => runCleanSteam(argv),
 };
 
@@ -50,8 +51,15 @@ const interestingCommand: CommandModule = {
 const wishListCommand: CommandModule = {
   command: 'show-wishlist-offers',
   aliases: ['wish'],
-  describe: '5. read and filters fetched data',
+  describe: '5. display wishlist',
   handler: () => runWishList(),
+};
+
+const ownedCommand: CommandModule = {
+  command: 'show-giveaway-offers',
+  aliases: ['give', 'own'],
+  describe: '5. display giveaway list',
+  handler: () => runGiveaway(),
 };
 
 yargs
@@ -61,6 +69,7 @@ yargs
   .command(ctCommand)
   .command(interestingCommand)
   .command(wishListCommand)
+  .command(ownedCommand)
   .command(cleanCommand)
   .demandCommand(1, 'You need at least one command before moving on.')
   .help()
