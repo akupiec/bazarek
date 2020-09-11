@@ -13,7 +13,7 @@ module.exports = {
     extensions: ['.ts', '.js'],
   },
   output: {
-    filename: 'gitlab-deployer',
+    filename: 'bazarek',
     path: path.resolve(__dirname, 'dist'),
   },
   plugins: [
@@ -21,6 +21,7 @@ module.exports = {
       banner: '#!/usr/bin/env node',
       raw: true,
     }),
+    new webpack.IgnorePlugin(/canvas/),
   ],
   stats: {
     warningsFilter: [/node_modules\/yargs/],
