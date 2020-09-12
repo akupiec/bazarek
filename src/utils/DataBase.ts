@@ -12,38 +12,67 @@ export class DataBase {
     });
   }
 
-  createTable(query) {
-    return this.db.run(query);
-  }
-
-  replace(tableName: string, columns: string, values: string) {
+  replace(tableName: string, columns: string, values: any) {
     const sql = `REPLACE INTO ${tableName} ${columns} VALUES ${values}`;
-    return this.db.run(sql, (err) => {
-      if (err) {
-        console.error(err, sql);
-        process.exit(-1);
-      }
-    });
+    this.run(sql);
   }
 
-  replaceObjs(tableName: string, data: any[]) {
+  replaceObj(tableName: string, data: any) {
+    return this.replaceObjs(tableName, [data]);
+  }
+
+  async replaceObjs(tableName: string, data: any[], ignoredKeys: string[] = []) {
     if (!data.length) {
       return;
     }
-    const cols = Object.keys(data[0]);
+    const cols = Object.keys(data[0]).concat(...ignoredKeys);
     const vals = data.map((row) => {
       const ret = [];
       cols.forEach((col) => {
-        const value = row[col];
+        const value = row[col] || 'NULL';
         if (typeof value === 'string') {
           ret.push(`'${value.replace(/'/gm, `''`)}'`);
         } else {
           ret.push(value);
         }
       });
-      return `(${ret.join(',')})`;
+      const values = ret.join(',').replace(`'NULL'`, 'null');
+      return `(${values})`;
     });
 
-    return this.replace(tableName, `(${cols.join(',')})`, vals.join(','));
+    const columns = `(${cols.join(',')})`;
+    const values = vals.join(',');
+    const updatSet = Object.keys(data[0])
+      .map((key) => `${key}=${key}`)
+      .join(',');
+    const sql = `INSERT INTO ${tableName} ${columns} VALUES ${values} ON CONFLICT(id) DO UPDATE SET ${updatSet}`;
+
+    return this.run(sql);
   }
+
+  run(sql: string) {
+    return new Promise((resolve, reject) => {
+      this.db.run(sql, (err) => {
+        if (err) {
+          console.error(err, sql);
+          reject(err);
+        }
+        resolve(err);
+      });
+    });
+  }
+
+  all(sql: string): Promise<any[]> {
+    return new Promise<any[]>((resolve, reject) => {
+      this.db.all(sql, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  upsert(tableName: string, data: any[], noChangeKeys: string[]) {}
 }

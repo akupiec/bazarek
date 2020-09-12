@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Box, Text } from 'ink';
 import BigText from 'ink-big-text';
 import Spinner from 'ink-spinner';
+import ProgressBar from 'ink-progress-bar';
 import { InkProps } from './Interfaces';
 
 const Logo = ({ isTTY, columns, name }) => {
@@ -16,6 +17,30 @@ const Logo = ({ isTTY, columns, name }) => {
   );
 };
 
+const MySpinner = ({ isTTY, msg }) => {
+  if (!msg) return <></>;
+  if (!isTTY) return <Text>{msg}</Text>;
+  return (
+    <Box>
+      <Spinner />
+      <Text> {msg}</Text>
+    </Box>
+  );
+};
+
+const MyProgress = ({ isTTY, current, max }) => {
+  if (!max) return <></>;
+  if (!isTTY) return <Text>to do: {max - current}</Text>;
+  return (
+    <Box>
+      <ProgressBar left={10} percent={current / max} />
+      <Text>
+        {current} - {max}
+      </Text>
+    </Box>
+  );
+};
+
 export class InkPainter extends Component<InkProps, any> {
   constructor(props) {
     super(props);
@@ -25,18 +50,14 @@ export class InkPainter extends Component<InkProps, any> {
   }
 
   render() {
-    let showSpinner: JSX.Element;
-    if (this.props.spinner && process.stdout.isTTY) {
-      showSpinner = <Spinner />;
-    }
+    const tty = process.stdout.isTTY;
+
     return (
       <>
-        <Logo isTTY={process.stdout.isTTY} columns={this.state.columns} name={this.props.name} />
+        <Logo isTTY={tty} columns={this.state.columns} name={this.props.name} />
         <Text>{this.props.msg}</Text>
-        <Box>
-          {showSpinner}
-          <Text> {this.props.spinner}</Text>
-        </Box>
+        <MySpinner isTTY={tty} msg={this.props.spinner} />
+        <MyProgress isTTY={tty} current={this.props.progress} max={this.props.maxProgress} />
       </>
     );
   }

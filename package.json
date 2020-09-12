@@ -19,6 +19,7 @@
     "clui": "^0.3.6",
     "ink": "^3.0.5",
     "ink-big-text": "^1.2.0",
+    "ink-progress-bar": "^3.0.0",
     "ink-spinner": "^4.0.1",
     "jsdom": "^16.4.0",
     "moment": "^2.24.0",

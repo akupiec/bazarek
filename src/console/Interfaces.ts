@@ -11,4 +11,6 @@ export interface InkProps {
   name: string;
   msg?: string;
   spinner?: string;
+  progress?: number;
+  maxProgress?: number;
 }
