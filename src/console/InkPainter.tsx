@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import { Box, Text } from 'ink';
-import BigText from 'ink-big-text';
 import Spinner from 'ink-spinner';
+// @ts-ignore
+import BigText from 'ink-big-text';
+// @ts-ignore
 import ProgressBar from 'ink-progress-bar';
 import { InkProps } from './Interfaces';
 
-const Logo = ({ isTTY, columns, name }) => {
+const Logo = ({ isTTY, columns, name }: any) => {
   if (!isTTY) return <></>;
   if (columns < 75) return <></>;
   return (
@@ -17,7 +19,7 @@ const Logo = ({ isTTY, columns, name }) => {
   );
 };
 
-const MySpinner = ({ isTTY, msg }) => {
+const MySpinner = ({ isTTY, msg }: any) => {
   if (!msg) return <></>;
   if (!isTTY) return <Text>{msg}</Text>;
   return (
@@ -28,7 +30,7 @@ const MySpinner = ({ isTTY, msg }) => {
   );
 };
 
-const MyProgress = ({ isTTY, current, max }) => {
+const MyProgress = ({ isTTY, current, max }: any) => {
   if (!max) return <></>;
   if (!isTTY) return <Text>to do: {max - current}</Text>;
   return (
@@ -42,7 +44,7 @@ const MyProgress = ({ isTTY, current, max }) => {
 };
 
 export class InkPainter extends Component<InkProps, any> {
-  constructor(props) {
+  constructor(props: InkProps) {
     super(props);
     this.state = {
       columns: process.stdout.columns,
