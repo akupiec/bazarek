@@ -1,7 +1,15 @@
-import { Sequelize, DataTypes, Model } from 'sequelize';
+import {
+  BelongsToGetAssociationMixin,
+  DataTypes,
+  HasOneCreateAssociationMixin,
+  Model,
+  Sequelize,
+} from 'sequelize';
+import { SteamDB } from './SteamDB';
 
 export interface BazarekI {
   id: number;
+  offerId?: number;
   name: string;
   price?: number;
   offers: number;
@@ -11,12 +19,16 @@ export interface BazarekI {
 
 export class BazarekDB extends Model<BazarekI> implements BazarekI {
   id!: number;
+  offerId!: number;
   name!: string;
   price!: number;
   offers!: number;
-  steamId!: number;
+  steamId?: number;
 
   readonly updatedAt!: Date;
+
+  getSteamDB!: BelongsToGetAssociationMixin<SteamDB>;
+  createSteamDB!: HasOneCreateAssociationMixin<SteamDB>;
 
   static initTypes(sequelize: Sequelize) {
     BazarekDB.init(
@@ -24,6 +36,10 @@ export class BazarekDB extends Model<BazarekI> implements BazarekI {
         id: {
           type: DataTypes.INTEGER.UNSIGNED,
           primaryKey: true,
+        },
+        offerId: {
+          type: DataTypes.INTEGER.UNSIGNED,
+          unique: true,
         },
         name: {
           type: DataTypes.STRING,
@@ -45,5 +61,9 @@ export class BazarekDB extends Model<BazarekI> implements BazarekI {
         sequelize, // passing the `sequelize` instance is required
       },
     );
+  }
+
+  static initRelation() {
+    BazarekDB.belongsTo(SteamDB);
   }
 }

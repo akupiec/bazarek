@@ -5,11 +5,10 @@ import { DataBase } from '../utils/db/DataBase';
 import { BazarekDB, BazarekI } from '../utils/db/BazarekDB';
 import { myAxios as axios } from '../utils/api';
 import { JSDOM } from 'jsdom';
+import { SteamDB } from '../utils/db/SteamDB';
 
 class UpdateBazarData {
-  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {
-    this.db.useTable(BazarekDB);
-  }
+  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   run() {
     let progress = 0;
@@ -78,40 +77,55 @@ class UpdateBazarData {
 }
 
 class UpdateBazarSteamLinks {
-  // constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {
-  //   this.db.run(createTable);
-  // }
-  //
-  // async run() {
-  //   const data: BazarGameData[] = await this.db.all(selectSteamToUpdate);
-  //   this.screenPrinter.log('Downloading steam links');
-  //   this.screenPrinter.setProgress(0, data.length);
-  //
-  //   let idx = 0;
-  //   const promises = data.map(async (row) => {
-  //     const d = await this.getSteamData(row);
-  //     const res = await this.db.replaceObj('bazarek', d);
-  //     this.screenPrinter.setProgress(idx++, data.length);
-  //     return res;
-  //   });
-  //
-  //   await Promise.all(promises);
-  //
-  //   this.screenPrinter.setProgress(0, 0);
-  //   this.screenPrinter.log('Linking done!', LogStatus.Success);
-  // }
-  //
-  // private getSteamData(data) {
-  //   return axios.get(`https://bazar.lowcygier.pl${data.href}`).then((resp) => {
-  //     const a = new JSDOM(resp.data);
-  //     const nodes = a.window.document.querySelectorAll('a[href]') as any[];
-  //     const steamNode = Array.from(nodes)
-  //       .filter((n) => n.href)
-  //       .find((n) => n.href.includes('store.steam'));
-  //     data.steamHref = (steamNode && steamNode.href) || null;
-  //     return data;
-  //   });
-  // }
+  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
+
+  async run() {
+    const bazarek = await this.db.findAll<BazarekDB>(BazarekDB, { steamId: null });
+    this.screenPrinter.log('Downloading steam links');
+    this.screenPrinter.setProgress(0, bazarek.length);
+
+    let idx = 0;
+    const promises = bazarek.map(async (b) => {
+      const dataToSave = await this.getSteamData(b);
+      if (dataToSave) {
+        await this.db.insert({ id: dataToSave.steamId }, SteamDB);
+        await b.save();
+      } else {
+        console.log(b);
+      }
+      this.screenPrinter.setProgress(idx++, bazarek.length);
+      return;
+    });
+    await Promise.all(promises);
+
+    this.screenPrinter.setProgress(0, 0);
+    this.screenPrinter.log('Linking done!', LogStatus.Success);
+  }
+
+  private getSteamData(data: BazarekDB) {
+    return axios.get(`https://bazar.lowcygier.pl/offer/game/${data.id}`).then(
+      (resp) => {
+        const a = new JSDOM(resp.data);
+        const nodes: NodeListOf<HTMLLinkElement> = a.window.document.querySelectorAll('a[href]');
+        const steamNode = Array.from(nodes)
+          .filter((n) => n.href)
+          .find((n) => n.href.includes('store.steam'));
+        const steamHref = (steamNode && steamNode.href) || null;
+        if (!steamHref) {
+          return null;
+        }
+        const regExpMatchArray = steamHref.match(/\d+/);
+        data.steamId = parseInt(regExpMatchArray && regExpMatchArray[0]);
+        const offerElement = a.window.document.querySelector('meta[property="og:url"]') as any;
+        const offerHref = offerElement.content;
+        data.offerId = parseInt(offerHref.match(/\d+/)[0]);
+        return data;
+      },
+      (err) => {
+        return null;
+      },
+    );
+  }
 }
 
 class UpdateCommand {
@@ -119,8 +133,9 @@ class UpdateCommand {
   private db = new DataBase();
 
   async run() {
-    await new UpdateBazarData(this.screenPrinter, this.db).run();
-    // await new UpdateBazarSteamLinks(this.screenPrinter, this.db).run();
+    await this.db.isReady;
+    // await new UpdateBazarData(this.screenPrinter, this.db).run();
+    await new UpdateBazarSteamLinks(this.screenPrinter, this.db).run();
   }
 }
 
