@@ -28,7 +28,7 @@ export class BazarekDB extends Model<BazarekI> implements BazarekI {
   readonly updatedAt!: Date;
 
   getSteamDB!: BelongsToGetAssociationMixin<SteamDB>;
-  createSteamDB!: HasOneCreateAssociationMixin<SteamDB>;
+  setSteamDB!: HasOneCreateAssociationMixin<SteamDB>;
 
   static initTypes(sequelize: Sequelize) {
     BazarekDB.init(
@@ -50,9 +50,6 @@ export class BazarekDB extends Model<BazarekI> implements BazarekI {
         offers: {
           type: DataTypes.TINYINT.UNSIGNED,
         },
-        steamId: {
-          type: DataTypes.INTEGER.UNSIGNED,
-        },
       },
       {
         timestamps: true,
@@ -64,6 +61,6 @@ export class BazarekDB extends Model<BazarekI> implements BazarekI {
   }
 
   static initRelation() {
-    BazarekDB.belongsTo(SteamDB);
+    BazarekDB.belongsTo(SteamDB, { foreignKey: 'steamId' });
   }
 }

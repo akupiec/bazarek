@@ -6,10 +6,10 @@ import chalk from 'chalk';
 
 export class ScreenPrinter {
   private ink: Instance;
-  private msg: string;
-  private _spinner: string;
-  private _progress: number;
-  private _maxProgress: number;
+  private msg?: string;
+  private _spinner?: string;
+  private _progress?: number;
+  private _maxProgress?: number;
 
   constructor() {
     this.ink = render(createElement(InkPainter, { name: 'bazarek' }));

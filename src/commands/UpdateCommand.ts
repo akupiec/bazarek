@@ -1,12 +1,16 @@
 import { CommandModule } from 'yargs';
 import { ScreenPrinter } from '../console/ScreenPrinter';
 import { LogStatus } from '../console/Interfaces';
-import { DataBase } from '../utils/db/DataBase';
-import { BazarekDB, BazarekI } from '../utils/db/BazarekDB';
+import { DataBase } from '../db/DataBase';
+import { BazarekDB, BazarekI } from '../db/BazarekDB';
 import { myAxios as axios } from '../utils/api';
 import { JSDOM } from 'jsdom';
-import { SteamDB } from '../utils/db/SteamDB';
-import { SteamMap } from '../interfaces/SteamMap';
+import { SteamDB } from '../db/SteamDB';
+import { Op } from 'sequelize';
+import moment from 'moment';
+
+const START_PAGE = 1;
+const LAST_PAGE = 2;
 
 function documentQueryAsText(node: JSDOM, selector: string) {
   const queryNode = node.window.document.querySelector(selector);
@@ -14,17 +18,27 @@ function documentQueryAsText(node: JSDOM, selector: string) {
     return queryNode.textContent;
   }
 }
+
 class UpdateBazarData {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
-  run() {
-    let progress = 0;
-    const maxPages = 120;
+  async run() {
+    let progress = 1;
+    const maxPages = LAST_PAGE;
     this.screenPrinter.log('Pulling BazarData');
     this.screenPrinter.spinner(`page: ${progress}`);
-    const promises: Promise<any>[] = [];
+    const needUpdate = await this.db.count(BazarekDB, {
+      where: { updatedAt: { [Op.lt]: moment().subtract(20, 'minutes') } },
+    });
+    const hasRecords = await this.db.count(BazarekDB, {});
+    if (hasRecords && !needUpdate) {
+      this.screenPrinter.log('All done', LogStatus.Success);
+      this.screenPrinter.stopSpinner();
+      return;
+    }
 
-    for (let page = 0; page < maxPages; page++) {
+    const promises: Promise<any>[] = [];
+    for (let page = START_PAGE; page <= maxPages; page++) {
       const prom = this.fetchAndUpdateData(page);
       prom.then(() => {
         this.screenPrinter.spinner(`page: ${progress++}`);
@@ -34,8 +48,6 @@ class UpdateBazarData {
 
     return Promise.all(promises).then(
       () => {
-        this.screenPrinter.log('Clearing old data');
-
         this.screenPrinter.log('All done', LogStatus.Success);
         this.screenPrinter.stopSpinner();
       },
@@ -57,9 +69,9 @@ class UpdateBazarData {
       const date = new Date().toISOString().slice(0, -1);
       a.push({
         id: Number(href.match(/\d+/)[0]),
-        name: listNode[i].textContent.trim(),
+        name: (listNode[i].textContent as any).trim(),
         price: this.parsePrice(listPrices[i]),
-        offers: parseInt(listOffers[i].textContent.trim()),
+        offers: parseInt((listOffers[i].textContent as any).trim()),
       });
     }
     return a;
@@ -87,20 +99,36 @@ class UpdateBazarSteamLinks {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
-    const bazarek = (await this.db.findAll<BazarekDB>(BazarekDB, { steamId: null })).slice(0, 10);
+    const date = moment().subtract('15', 'minutes').toDate();
+    const bazarek = await this.db.findAll<BazarekDB>(BazarekDB, {
+      where: {
+        [Op.or]: {
+          offerId: null,
+          [Op.and]: {
+            steamId: null,
+            updatedAt: {
+              [Op.lt]: date,
+            },
+          },
+        },
+      },
+      attributes: ['id', 'updatedAt'],
+    });
     this.screenPrinter.log('Downloading steam links');
     this.screenPrinter.setProgress(0, bazarek.length);
 
     let idx = 0;
     const promises = bazarek.map(async (b) => {
       const dataToSave = await this.getSteamData(b);
+      if (!dataToSave.steamId) {
+        b.changed('updatedAt', true);
+        await b.save();
+      }
       if (dataToSave) {
         await this.db.insert({ id: dataToSave.steamId, href: dataToSave.steamHref }, SteamDB);
         b.steamId = dataToSave.steamId;
         b.offerId = dataToSave.offerId;
         await b.save();
-      } else {
-        console.log(b);
       }
       this.screenPrinter.setProgress(idx++, bazarek.length);
       return;
@@ -112,30 +140,34 @@ class UpdateBazarSteamLinks {
   }
 
   private getSteamData(data: BazarekDB) {
-    return axios.get(`https://bazar.lowcygier.pl/offer/game/${data.id}`).then(
-      (resp) => {
-        const a = new JSDOM(resp.data);
-        const nodes: NodeListOf<HTMLLinkElement> = a.window.document.querySelectorAll('a[href]');
-        const steamNode = Array.from(nodes)
-          .filter((n) => n.href)
-          .find((n) => n.href.includes('store.steam'));
-        const steamHref = (steamNode && steamNode.href) || null;
-        if (!steamHref) {
-          return null;
-        }
-        const regExpMatchArray = steamHref.match(/\d+/);
-        const offerElement = a.window.document.querySelector('meta[property="og:url"]') as any;
-        const offerHref = offerElement.content;
-        return {
-          steamHref: steamHref,
-          steamId: parseInt(regExpMatchArray && regExpMatchArray[0]),
-          offerId: parseInt(offerHref.match(/\d+/)[0]),
-        };
-      },
-      (err) => {
-        return null;
-      },
-    );
+    return axios.get(`https://bazar.lowcygier.pl/offer/game/${data.id}`).then((resp) => {
+      const a = new JSDOM(resp.data);
+      const steamHref = UpdateBazarSteamLinks.findSteamHref(a);
+      const steamId = UpdateBazarSteamLinks.matchFirst(steamHref, /\d+/);
+      const offerElement = a.window.document.querySelector('meta[property="og:url"]') as any;
+      const offerHref = offerElement.content;
+      return {
+        steamHref: steamHref,
+        steamId: steamId ? parseInt(steamId) : undefined,
+        offerId: parseInt(offerHref.match(/\d+/)[0]),
+      };
+    });
+  }
+
+  private static findSteamHref(a: JSDOM) {
+    const nodes: NodeListOf<HTMLLinkElement> = a.window.document.querySelectorAll('a[href]');
+    const steamNode = Array.from(nodes)
+      .filter((n) => n.href)
+      .find((n) => n.href.includes('store.steam'));
+    return steamNode && steamNode.href;
+  }
+
+  private static matchFirst(str: string | undefined, regEx: RegExp) {
+    if (!str) {
+      return null;
+    }
+    const match = str.match(regEx);
+    return match ? match[0] : null;
   }
 }
 
@@ -143,14 +175,14 @@ class UpdateSteamBasicData {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
-    const steam = await this.db.findAll<SteamDB>(SteamDB, { name: null });
+    const steam = await this.db.findAll<SteamDB>(SteamDB, { where: { name: null } });
     const total = steam.length;
     this.screenPrinter.log('Downloading basic steam data');
     this.screenPrinter.setProgress(0, total);
 
     let idx = 0;
     const promises = steam.map(async (s) => {
-      return this.getSteamData(s);
+      const steamData = this.getSteamData(s);
     });
     await Promise.all(promises);
 
@@ -158,26 +190,31 @@ class UpdateSteamBasicData {
     this.screenPrinter.log('Linking done!', LogStatus.Success);
   }
 
-  getSteamData(steam: SteamDB): Promise<SteamDB> {
+  getSteamData(steam: SteamDB) {
     const href = `https://store.steampowered.com/app/${steam.id}`;
     return axios.get(href, { retry: 3, retryDelay: 3000 } as any).then((resp) => {
       const a = new JSDOM(resp.data);
       const name = documentQueryAsText(a, '.apphub_AppName');
-
-      // const tagsNode = a.window.document.querySelector('.popular_tags_ctn > div.glance_tags');
-      // const tagsStr = (tagsNode && tagsNode.textContent) || '';
-      // let tags = tagsStr.trim().slice(0, -1).split('\n');
-      // tags = tags.map((t) => t.trim()).filter((t) => !!t);
+      const tags = UpdateSteamBasicData.findSteamTags(a);
       // const reviewNode = a.window.document.querySelector('.game_review_summary ');
       // const reviewSummary = reviewNode && reviewNode.textContent.trim();
-      // const categories = Array.from(
-      //   a.window.document.querySelectorAll('#category_block  .name'),
-      // ).map((a: any) => a.textContent.trim());
-      const element = a.window.document.querySelector('.responsive_hidden');
-      // const responses = element && element.textContent.trim();
-      steam.name = name;
-      return steam;
+      const categories = UpdateSteamBasicData.findSteamCategory(a);
+      return { name, tags, categories };
     });
+  }
+
+  private static findSteamTags(a: JSDOM) {
+    const tagsNode = a.window.document.querySelector('.popular_tags_ctn > div.glance_tags');
+    const tagsStr = (tagsNode && tagsNode.textContent) || '';
+    let tags = tagsStr.trim().slice(0, -1).split('\n');
+    tags = tags.map((t) => t.trim()).filter((t) => !!t);
+    return tags;
+  }
+
+  private static findSteamCategory(a: JSDOM) {
+    return Array.from(a.window.document.querySelectorAll('#category_block  .name')).map((a: any) =>
+      a.textContent.trim(),
+    );
   }
 }
 
@@ -187,7 +224,7 @@ class UpdateCommand {
 
   async run() {
     await this.db.isReady;
-    // await new UpdateBazarData(this.screenPrinter, this.db).run();
+    await new UpdateBazarData(this.screenPrinter, this.db).run();
     await new UpdateBazarSteamLinks(this.screenPrinter, this.db).run();
     await new UpdateSteamBasicData(this.screenPrinter, this.db).run();
   }

@@ -1,7 +1,10 @@
-import { Transaction, Model, Sequelize } from 'sequelize';
+import { Transaction, Model, Sequelize, QueryTypes, NOW } from 'sequelize';
 import { GenericTable } from './GenericTable';
 import { SteamDB } from './SteamDB';
 import { BazarekDB } from './BazarekDB';
+import { TagDB } from './TagDB';
+import { CategoryDB } from './CategoryDB';
+import { QueryOptionsWithType } from 'sequelize/types/lib/query-interface';
 
 const fs = require('fs');
 
@@ -17,11 +20,7 @@ export class DataBase {
       logging: false,
     });
 
-    this.useTable(SteamDB);
-    this.useTable(BazarekDB);
-    this.initRelations(SteamDB);
-    this.initRelations(BazarekDB);
-    this.isReady = this.db.sync();
+    this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB);
 
     //catches ctrl+c event
     process.on('SIGINT', () => {
@@ -30,29 +29,29 @@ export class DataBase {
     });
   }
 
-  useTable(tableDB: GenericTable) {
-    tableDB.initTypes(this.db);
+  useTables(...tableDBs: GenericTable[]) {
+    tableDBs.forEach((table) => {
+      table.initTypes(this.db);
+    });
+
+    tableDBs.forEach((table) => {
+      table.initRelation();
+    });
+    return this.db.sync();
   }
 
-  initRelations(tableDB: GenericTable) {
-    tableDB.initRelation();
-  }
-
-  async insupsRaw<T>(data: T[], model: any): Promise<any> {
+  async insupsRaw<T = any>(data: T[], model: any): Promise<any> {
     return await this.db.transaction({ type: Transaction.TYPES.IMMEDIATE }, async (transaction) => {
       const promises = data.map((d) => {
         const where = { id: (d as any).id };
         return model
           .findOrCreate({ where, defaults: d, transaction })
-          .then(([model, created]: [Model<T>, boolean]) => {
+          .then(([newModel, created]: [Model<T>, boolean]) => {
             if (created) {
-              return model;
+              return newModel;
             } else {
-              return model.update(d as any, {
-                where,
-                fields: ['price', 'offers'],
-                transaction,
-              });
+              newModel.changed('updatedAt' as any, true);
+              return newModel.save({ transaction });
             }
           });
       });
@@ -72,11 +71,19 @@ export class DataBase {
 
   async insert<T>(data: any, model: any): Promise<any> {
     return model.create(data).catch((a: any) => {
-      console.log(a);
+      // console.log(a);
     });
   }
 
-  findAll<T>(model: any, where: any): Promise<T[]> {
-    return model.findAll({ where });
+  findAll<T>(model: any, options: any): Promise<T[]> {
+    return model.findAll(options);
+  }
+
+  count(model: any, options: any): Promise<number> {
+    return model.count(options);
+  }
+
+  query(sql: string, param: QueryOptionsWithType<QueryTypes.UPDATE>) {
+    return this.db.query(sql, param);
   }
 }

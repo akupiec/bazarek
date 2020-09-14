@@ -1,5 +1,6 @@
 import { Sequelize, DataTypes, Model } from 'sequelize';
-import { BazarekDB } from './BazarekDB';
+import { TagDB } from './TagDB';
+import { CategoryDB } from './CategoryDB';
 
 export interface SteamI {
   id: number;
@@ -39,12 +40,23 @@ export class SteamDB extends Model<SteamI> implements SteamI {
       {
         timestamps: true,
         tableName: 'steam',
-        sequelize, // passing the `sequelize` instance is required
+        sequelize,
       },
     );
   }
 
   static initRelation() {
-    SteamDB.hasOne(BazarekDB);
+    SteamDB.belongsToMany(TagDB, {
+      through: 'tag-steam',
+      foreignKey: 'steamId',
+      otherKey: 'tagId',
+      timestamps: false,
+    });
+    SteamDB.belongsToMany(CategoryDB, {
+      through: 'category-steam',
+      foreignKey: 'steamId',
+      otherKey: 'categoryId',
+      timestamps: false,
+    });
   }
 }
