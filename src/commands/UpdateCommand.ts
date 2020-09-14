@@ -6,7 +6,14 @@ import { BazarekDB, BazarekI } from '../utils/db/BazarekDB';
 import { myAxios as axios } from '../utils/api';
 import { JSDOM } from 'jsdom';
 import { SteamDB } from '../utils/db/SteamDB';
+import { SteamMap } from '../interfaces/SteamMap';
 
+function documentQueryAsText(node: JSDOM, selector: string) {
+  const queryNode = node.window.document.querySelector(selector);
+  if (queryNode) {
+    return queryNode.textContent;
+  }
+}
 class UpdateBazarData {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
@@ -80,7 +87,7 @@ class UpdateBazarSteamLinks {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
-    const bazarek = await this.db.findAll<BazarekDB>(BazarekDB, { steamId: null });
+    const bazarek = (await this.db.findAll<BazarekDB>(BazarekDB, { steamId: null })).slice(0, 10);
     this.screenPrinter.log('Downloading steam links');
     this.screenPrinter.setProgress(0, bazarek.length);
 
@@ -88,7 +95,9 @@ class UpdateBazarSteamLinks {
     const promises = bazarek.map(async (b) => {
       const dataToSave = await this.getSteamData(b);
       if (dataToSave) {
-        await this.db.insert({ id: dataToSave.steamId }, SteamDB);
+        await this.db.insert({ id: dataToSave.steamId, href: dataToSave.steamHref }, SteamDB);
+        b.steamId = dataToSave.steamId;
+        b.offerId = dataToSave.offerId;
         await b.save();
       } else {
         console.log(b);
@@ -115,16 +124,60 @@ class UpdateBazarSteamLinks {
           return null;
         }
         const regExpMatchArray = steamHref.match(/\d+/);
-        data.steamId = parseInt(regExpMatchArray && regExpMatchArray[0]);
         const offerElement = a.window.document.querySelector('meta[property="og:url"]') as any;
         const offerHref = offerElement.content;
-        data.offerId = parseInt(offerHref.match(/\d+/)[0]);
-        return data;
+        return {
+          steamHref: steamHref,
+          steamId: parseInt(regExpMatchArray && regExpMatchArray[0]),
+          offerId: parseInt(offerHref.match(/\d+/)[0]),
+        };
       },
       (err) => {
         return null;
       },
     );
+  }
+}
+
+class UpdateSteamBasicData {
+  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
+
+  async run() {
+    const steam = await this.db.findAll<SteamDB>(SteamDB, { name: null });
+    const total = steam.length;
+    this.screenPrinter.log('Downloading basic steam data');
+    this.screenPrinter.setProgress(0, total);
+
+    let idx = 0;
+    const promises = steam.map(async (s) => {
+      return this.getSteamData(s);
+    });
+    await Promise.all(promises);
+
+    this.screenPrinter.setProgress(0, 0);
+    this.screenPrinter.log('Linking done!', LogStatus.Success);
+  }
+
+  getSteamData(steam: SteamDB): Promise<SteamDB> {
+    const href = `https://store.steampowered.com/app/${steam.id}`;
+    return axios.get(href, { retry: 3, retryDelay: 3000 } as any).then((resp) => {
+      const a = new JSDOM(resp.data);
+      const name = documentQueryAsText(a, '.apphub_AppName');
+
+      // const tagsNode = a.window.document.querySelector('.popular_tags_ctn > div.glance_tags');
+      // const tagsStr = (tagsNode && tagsNode.textContent) || '';
+      // let tags = tagsStr.trim().slice(0, -1).split('\n');
+      // tags = tags.map((t) => t.trim()).filter((t) => !!t);
+      // const reviewNode = a.window.document.querySelector('.game_review_summary ');
+      // const reviewSummary = reviewNode && reviewNode.textContent.trim();
+      // const categories = Array.from(
+      //   a.window.document.querySelectorAll('#category_block  .name'),
+      // ).map((a: any) => a.textContent.trim());
+      const element = a.window.document.querySelector('.responsive_hidden');
+      // const responses = element && element.textContent.trim();
+      steam.name = name;
+      return steam;
+    });
   }
 }
 
@@ -136,6 +189,7 @@ class UpdateCommand {
     await this.db.isReady;
     // await new UpdateBazarData(this.screenPrinter, this.db).run();
     await new UpdateBazarSteamLinks(this.screenPrinter, this.db).run();
+    await new UpdateSteamBasicData(this.screenPrinter, this.db).run();
   }
 }
 

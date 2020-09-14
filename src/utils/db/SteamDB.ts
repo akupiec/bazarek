@@ -3,6 +3,7 @@ import { BazarekDB } from './BazarekDB';
 
 export interface SteamI {
   id: number;
+  href: string;
   name: string;
   price: number;
   updatedAt?: Date;
@@ -12,6 +13,7 @@ export interface SteamI {
 export class SteamDB extends Model<SteamI> implements SteamI {
   id!: number;
   name!: string;
+  href!: string;
   price!: number;
 
   readonly updatedAt!: Date;
@@ -23,6 +25,9 @@ export class SteamDB extends Model<SteamI> implements SteamI {
         id: {
           type: DataTypes.INTEGER.UNSIGNED,
           primaryKey: true,
+        },
+        href: {
+          type: DataTypes.STRING,
         },
         name: {
           type: DataTypes.STRING,
