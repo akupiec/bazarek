@@ -1,5 +1,5 @@
 import * as yargs from 'yargs';
-import { updateCommand } from './commands/UpdateCommand';
+import { updateCommand } from './commands/update/UpdateCommand';
 
 // const bazarCommand: CommandModule = {
 //   command: 'bazar',

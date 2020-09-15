@@ -1,7 +1,7 @@
 import { SteamDB } from './SteamDB';
-import { NamedI, NamedJoinTable } from './NamedJoinTable';
+import { NamedJoinTable } from './NamedJoinTable';
 
-export class TagDB extends NamedJoinTable implements NamedI {
+export class TagDB extends NamedJoinTable {
   protected static joinTableName = 'tag-steam';
   protected static otherKey = 'steamId';
   protected static foreignKey = 'tagId';

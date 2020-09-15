@@ -1,6 +1,7 @@
-import { DataTypes, HasManySetAssociationsMixin, Model, NOW, Sequelize } from 'sequelize';
+import { DataTypes, Model, NOW, Sequelize } from 'sequelize';
 import { TagDB } from './TagDB';
 import { CategoryDB } from './CategoryDB';
+import { ReviewDB } from './ReviewDB';
 
 export interface SteamI {
   id: number;
@@ -9,6 +10,9 @@ export interface SteamI {
   price?: number;
   tags?: string[];
   categories?: string[];
+  reviews?: number;
+  review?: string;
+  reviewId?: number;
   updatedAt?: Date;
   createdAt?: Date;
 }
@@ -18,12 +22,10 @@ export class SteamDB extends Model<SteamI> implements SteamI {
   name!: string | undefined;
   href!: string;
   price!: number;
+  reviews!: number;
 
   readonly updatedAt!: Date;
   readonly createdAt!: Date;
-
-  setTagDBs!: HasManySetAssociationsMixin<TagDB, number>;
-  setCategoryDBs!: HasManySetAssociationsMixin<CategoryDB, number>;
 
   static initTypes(sequelize: Sequelize) {
     SteamDB.init(
@@ -41,6 +43,9 @@ export class SteamDB extends Model<SteamI> implements SteamI {
         price: {
           type: DataTypes.FLOAT.UNSIGNED,
         },
+        reviews: {
+          type: DataTypes.NUMBER,
+        },
       },
       {
         timestamps: true,
@@ -48,21 +53,6 @@ export class SteamDB extends Model<SteamI> implements SteamI {
         sequelize,
       },
     );
-  }
-
-  async updateRawData(data: SteamI) {
-    const tagsPro = data.tags?.map((t: string) =>
-      TagDB.findOrCreate({ where: { name: t }, defaults: { name: t } }).then((a) => a[0]),
-    );
-    const categoriesPro = data.categories?.map((t: string) =>
-      CategoryDB.findOrCreate({ where: { name: t }, defaults: { name: t } }).then((a) => a[0]),
-    );
-    const tags = await Promise.all(tagsPro || []);
-    const categories = await Promise.all(categoriesPro || []);
-    await this.setTagDBs(tags as TagDB[], {});
-    await this.setCategoryDBs(categories as CategoryDB[], {});
-    this.name = data.name;
-    return this.save();
   }
 
   static initRelation() {
@@ -105,10 +95,17 @@ export class SteamDB extends Model<SteamI> implements SteamI {
   }
 
   static async updateAll(steamDatas: SteamI[]) {
+    const reviewsDb = await ReviewDB.createBySteam(steamDatas);
     await Promise.all(
       steamDatas.map((s) =>
         SteamDB.update(
-          { name: s.name, price: s.price, updatedAt: NOW as any },
+          {
+            name: s.name,
+            price: s.price,
+            reviews: s.reviews,
+            reviewId: reviewsDb.find((r) => r.name === s.review)?.id,
+            updatedAt: NOW as any,
+          },
           { where: { id: s.id } },
         ),
       ),

@@ -1,7 +1,7 @@
 import { SteamDB } from './SteamDB';
-import { NamedI, NamedJoinTable } from './NamedJoinTable';
+import { NamedJoinTable } from './NamedJoinTable';
 
-export class CategoryDB extends NamedJoinTable implements NamedI {
+export class CategoryDB extends NamedJoinTable {
   protected static joinTableName = 'category-steam';
   protected static otherKey = 'steamId';
   protected static foreignKey = 'categoryId';

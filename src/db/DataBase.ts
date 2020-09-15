@@ -5,6 +5,7 @@ import { BazarekDB } from './model/BazarekDB';
 import { TagDB } from './model/TagDB';
 import { CategoryDB } from './model/CategoryDB';
 import { QueryOptionsWithType } from 'sequelize/types/lib/query-interface';
+import { ReviewDB } from './model/ReviewDB';
 
 const fs = require('fs');
 
@@ -20,7 +21,7 @@ export class DataBase {
       logging: true,
     });
 
-    this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB);
+    this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB, ReviewDB);
 
     //catches ctrl+c event
     process.on('SIGINT', () => {
