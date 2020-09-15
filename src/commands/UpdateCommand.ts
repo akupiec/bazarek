@@ -103,13 +103,11 @@ class UpdateBazarSteamLinks {
     const bazarek = await this.db.findAll<BazarekDB>(BazarekDB, {
       where: {
         [Op.or]: {
-          offerId: null,
-          [Op.and]: {
-            steamId: null,
-            updatedAt: {
-              [Op.lt]: date,
-            },
+          updatedAt: {
+            [Op.lt]: date,
           },
+          offerId: null,
+          steamId: null,
         },
       },
       attributes: ['id', 'updatedAt'],
@@ -174,15 +172,10 @@ class UpdateBazarSteamLinks {
 class UpdateSteamBasicData {
   steamDatas: SteamI[] = [];
 
-  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {
-    process.on('SIGINT', async () => {
-      await SteamDB.updateAll(this.steamDatas);
-    });
-  }
+  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
     const steam = await this.db.findAll<SteamDB>(SteamDB, {
-      // where: { name: null },
       limit: 50,
     });
     const total = steam.length;
