@@ -1,7 +1,6 @@
 import { CommandModule } from 'yargs';
 import { ScreenPrinter } from '../../console/ScreenPrinter';
 import { DataBase } from '../../db/DataBase';
-import { JSDOM } from 'jsdom';
 import { UpdateBazarData } from './UpdateBazarData';
 import { UpdateBazarSteamLinks } from './UpdateBazarSteamLinks';
 import { UpdateSteamBasicData } from './UpdateSteamBasicData';

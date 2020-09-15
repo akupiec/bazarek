@@ -1,13 +1,9 @@
 import { ScreenPrinter } from '../../console/ScreenPrinter';
 import { DataBase } from '../../db/DataBase';
 import { BazarekDB } from '../../db/model/BazarekDB';
-import { Op } from 'sequelize';
-import moment from 'moment';
 import { LogStatus } from '../../console/Interfaces';
 import { Bazarek } from '../../utils/htmlParsers/Bazarek';
-
-const START_PAGE = 1;
-const LAST_PAGE = 1;
+import { LAST_PAGE, needUpdateOptions, START_PAGE } from './config';
 
 export class UpdateBazarData {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
@@ -17,9 +13,8 @@ export class UpdateBazarData {
     const maxPages = LAST_PAGE;
     this.screenPrinter.log('Pulling BazarData');
     this.screenPrinter.spinner(`page: ${progress}`);
-    const needUpdate = await this.db.count(BazarekDB, {
-      where: { updatedAt: { [Op.lt]: moment().subtract(20, 'minutes') } },
-    });
+
+    const needUpdate = await this.db.count(BazarekDB, needUpdateOptions);
     const hasRecords = await this.db.count(BazarekDB, {});
     if (hasRecords && !needUpdate) {
       this.screenPrinter.log('All done', LogStatus.Success);

@@ -1,7 +1,7 @@
 import { SteamDB, SteamI } from '../../db/model/SteamDB';
 import { myAxios as axios } from '../api';
 import { JSDOM } from 'jsdom';
-import { findNodeAndGetInt, findNodeAndGetText } from './general';
+import { findNodeAndGetFloat, findNodeAndGetInt, findNodeAndGetText } from './general';
 
 export class Steam {
   static getSteamData(steam: SteamDB): Promise<SteamI> {
@@ -18,6 +18,7 @@ export class Steam {
         const tags = this.findSteamTags(a);
         const review = findNodeAndGetText(a, '.user_reviews .game_review_summary ');
         const reviews = findNodeAndGetInt(a, '.user_reviews .responsive_hidden');
+        const price = findNodeAndGetFloat(a, '.game_purchase_price');
         const categories = this.findSteamCategory(a);
         const ret: SteamI = {
           id: steam.id,
@@ -25,6 +26,7 @@ export class Steam {
           tags,
           name,
           categories,
+          price,
           review,
           reviews,
         };

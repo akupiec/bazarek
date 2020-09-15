@@ -14,3 +14,11 @@ export function findNodeAndGetInt(node: JSDOM, selector: string): number | undef
     return parseInt(match[0]);
   }
 }
+
+export function findNodeAndGetFloat(node: JSDOM, selector: string): number | undefined {
+  const srt = findNodeAndGetText(node, selector);
+  const match = srt?.match(/\d+[,.]?\d+/);
+  if (match && match[0]) {
+    return parseFloat(match[0].replace(',', '.'));
+  }
+}
