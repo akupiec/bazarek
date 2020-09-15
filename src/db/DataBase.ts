@@ -1,9 +1,9 @@
 import { Transaction, Model, Sequelize, QueryTypes, NOW } from 'sequelize';
-import { GenericTable } from './GenericTable';
-import { SteamDB } from './SteamDB';
-import { BazarekDB } from './BazarekDB';
-import { TagDB } from './TagDB';
-import { CategoryDB } from './CategoryDB';
+import { GenericTable } from './model/GenericTable';
+import { SteamDB } from './model/SteamDB';
+import { BazarekDB } from './model/BazarekDB';
+import { TagDB } from './model/TagDB';
+import { CategoryDB } from './model/CategoryDB';
 import { QueryOptionsWithType } from 'sequelize/types/lib/query-interface';
 
 const fs = require('fs');
@@ -17,7 +17,7 @@ export class DataBase {
   constructor() {
     this.db = new Sequelize('sqlite:chinook.db', {
       // logging: (msg) => this.logStream.write(msg),
-      logging: false,
+      logging: true,
     });
 
     this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB);
@@ -59,20 +59,8 @@ export class DataBase {
     });
   }
 
-  async insertRaw<T>(data: T[], model: any): Promise<any> {
-    return await this.db.transaction({ type: Transaction.TYPES.EXCLUSIVE }, async (transaction) => {
-      const promises = data.map((d) => {
-        return model.create(d, { transaction }).catch(() => {});
-      });
-      await Promise.all(promises);
-      return transaction.commit();
-    });
-  }
-
   async insert<T>(data: any, model: any): Promise<any> {
-    return model.create(data).catch((a: any) => {
-      // console.log(a);
-    });
+    return model.create(data).catch(() => {});
   }
 
   findAll<T>(model: any, options: any): Promise<T[]> {
@@ -81,9 +69,5 @@ export class DataBase {
 
   count(model: any, options: any): Promise<number> {
     return model.count(options);
-  }
-
-  query(sql: string, param: QueryOptionsWithType<QueryTypes.UPDATE>) {
-    return this.db.query(sql, param);
   }
 }

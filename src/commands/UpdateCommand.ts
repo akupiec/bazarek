@@ -2,20 +2,20 @@ import { CommandModule } from 'yargs';
 import { ScreenPrinter } from '../console/ScreenPrinter';
 import { LogStatus } from '../console/Interfaces';
 import { DataBase } from '../db/DataBase';
-import { BazarekDB, BazarekI } from '../db/BazarekDB';
+import { BazarekDB, BazarekI } from '../db/model/BazarekDB';
 import { myAxios as axios } from '../utils/api';
 import { JSDOM } from 'jsdom';
-import { SteamDB } from '../db/SteamDB';
+import { SteamDB, SteamI } from '../db/model/SteamDB';
 import { Op } from 'sequelize';
 import moment from 'moment';
 
 const START_PAGE = 1;
-const LAST_PAGE = 2;
+const LAST_PAGE = 1;
 
-function documentQueryAsText(node: JSDOM, selector: string) {
+function documentQueryAsText(node: JSDOM, selector: string): string | undefined {
   const queryNode = node.window.document.querySelector(selector);
   if (queryNode) {
-    return queryNode.textContent;
+    return queryNode.textContent || undefined;
   }
 }
 
@@ -172,35 +172,54 @@ class UpdateBazarSteamLinks {
 }
 
 class UpdateSteamBasicData {
-  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
+  steamDatas: SteamI[] = [];
+
+  constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {
+    process.on('SIGINT', async () => {
+      await SteamDB.updateAll(this.steamDatas);
+    });
+  }
 
   async run() {
-    const steam = await this.db.findAll<SteamDB>(SteamDB, { where: { name: null } });
+    const steam = await this.db.findAll<SteamDB>(SteamDB, {
+      // where: { name: null },
+      limit: 50,
+    });
     const total = steam.length;
     this.screenPrinter.log('Downloading basic steam data');
     this.screenPrinter.setProgress(0, total);
 
     let idx = 0;
     const promises = steam.map(async (s) => {
-      const steamData = this.getSteamData(s);
+      this.steamDatas.push(await this.getSteamData(s));
+      this.screenPrinter.setProgress(idx++, total);
     });
-    await Promise.all(promises);
+    await Promise.allSettled(promises).then(async () => {
+      await SteamDB.updateAll(this.steamDatas);
+      this.steamDatas = [];
+    });
 
     this.screenPrinter.setProgress(0, 0);
     this.screenPrinter.log('Linking done!', LogStatus.Success);
   }
 
-  getSteamData(steam: SteamDB) {
+  getSteamData(steam: SteamDB): Promise<SteamI> {
     const href = `https://store.steampowered.com/app/${steam.id}`;
-    return axios.get(href, { retry: 3, retryDelay: 3000 } as any).then((resp) => {
-      const a = new JSDOM(resp.data);
-      const name = documentQueryAsText(a, '.apphub_AppName');
-      const tags = UpdateSteamBasicData.findSteamTags(a);
-      // const reviewNode = a.window.document.querySelector('.game_review_summary ');
-      // const reviewSummary = reviewNode && reviewNode.textContent.trim();
-      const categories = UpdateSteamBasicData.findSteamCategory(a);
-      return { name, tags, categories };
-    });
+    return axios
+      .get(href, {
+        retry: 3,
+        retryDelay: 3000,
+        headers: { Cookie: 'wants_mature_content=1; birthtime=628470001;' },
+      } as any)
+      .then((resp) => {
+        const a = new JSDOM(resp.data);
+        const name = documentQueryAsText(a, '.apphub_AppName');
+        const tags = UpdateSteamBasicData.findSteamTags(a);
+        // const reviewNode = a.window.document.querySelector('.game_review_summary ');
+        // const reviewSummary = reviewNode && reviewNode.textContent.trim();
+        const categories = UpdateSteamBasicData.findSteamCategory(a);
+        return { id: steam.id, href: steam.href, tags, name, categories };
+      });
   }
 
   private static findSteamTags(a: JSDOM) {
