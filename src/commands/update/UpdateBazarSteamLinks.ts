@@ -8,20 +8,19 @@ import { LogStatus } from '../../console/Interfaces';
 import { myAxios as axios } from '../../utils/api';
 import { JSDOM } from 'jsdom';
 import { Bazarek } from '../../utils/htmlParsers/Bazarek';
+import { needUpdateOptions } from './config';
 
 export class UpdateBazarSteamLinks {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
-    const date = moment().subtract('15', 'minutes').toDate();
     const bazarek = await this.db.findAll<BazarekDB>(BazarekDB, {
       where: {
         [Op.or]: {
           updatedAt: {
-            [Op.lt]: date,
+            [Op.lt]: needUpdateOptions.where,
           },
           offerId: null,
-          steamId: null,
         },
       },
       attributes: ['id', 'updatedAt'],
@@ -33,10 +32,11 @@ export class UpdateBazarSteamLinks {
     const promises = bazarek.map(async (b) => {
       const dataToSave = await Bazarek.getSteamData(b);
       if (!dataToSave.steamId) {
+        b.offerId = dataToSave.offerId;
         b.changed('updatedAt', true);
         await b.save();
       }
-      if (dataToSave) {
+      if (dataToSave.steamHref && dataToSave.steamId) {
         await this.db.insert({ id: dataToSave.steamId, href: dataToSave.steamHref }, SteamDB);
         b.steamId = dataToSave.steamId;
         b.offerId = dataToSave.offerId;

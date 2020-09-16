@@ -16,7 +16,14 @@ export class UpdateSteamBasicData {
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
 
   async run() {
-    const steam = await this.db.findAll<SteamDB>(SteamDB, needUpdateOptions);
+    const steam = await this.db.findAll<SteamDB>(SteamDB, {
+      where: {
+        [Op.or]: {
+          ...needUpdateOptions.where,
+          name: null,
+        },
+      },
+    });
     const total = steam.length;
     this.screenPrinter.log('Downloading basic steam data');
     this.screenPrinter.setProgress(0, total);

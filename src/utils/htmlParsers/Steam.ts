@@ -14,7 +14,7 @@ export class Steam {
       } as any)
       .then((resp) => {
         const a = new JSDOM(resp.data);
-        const name = findNodeAndGetText(a, '.apphub_AppName');
+        const name = findNodeAndGetText(a, '.apphub_AppName') || '______';
         const tags = this.findSteamTags(a);
         const review = findNodeAndGetText(a, '.user_reviews .game_review_summary ');
         const reviews = findNodeAndGetInt(a, '.user_reviews .responsive_hidden');

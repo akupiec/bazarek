@@ -18,7 +18,7 @@ export class DataBase {
   constructor() {
     this.db = new Sequelize('sqlite:chinook.db', {
       // logging: (msg) => this.logStream.write(msg),
-      logging: false,
+      logging: true,
     });
 
     this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB, ReviewDB);

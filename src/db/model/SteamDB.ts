@@ -1,7 +1,8 @@
-import { DataTypes, Model, NOW, Sequelize } from 'sequelize';
+import { DataTypes, Model, NOW, QueryTypes, Sequelize } from 'sequelize';
 import { TagDB } from './TagDB';
 import { CategoryDB } from './CategoryDB';
 import { ReviewDB } from './ReviewDB';
+import moment from 'moment';
 
 export interface SteamI {
   id: number;
@@ -98,15 +99,20 @@ export class SteamDB extends Model<SteamI> implements SteamI {
     const reviewsDb = await ReviewDB.createBySteam(steamDatas);
     await Promise.all(
       steamDatas.map((s) =>
-        SteamDB.update(
+        this.sequelize?.query(
+          'UPDATE steam SET name=?, price=?, reviews=?, reviewId=?, updatedAt=? WHERE id=?',
           {
-            name: s.name,
-            price: s.price,
-            reviews: s.reviews,
-            reviewId: reviewsDb.find((r) => r.name === s.review)?.id,
-            updatedAt: NOW as any,
+            type: QueryTypes.UPDATE,
+            replacements: [
+              s.name,
+              s.price,
+              s.reviews,
+              reviewsDb.find((r) => r.name === s.review)?.id,
+              new Date().toISOString(),
+              s.id,
+            ],
+            raw: true,
           },
-          { where: { id: s.id } },
         ),
       ),
     );
