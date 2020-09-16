@@ -2,18 +2,20 @@ import { SteamDB, SteamI } from '../../db/model/SteamDB';
 import { ScreenPrinter } from '../../console/ScreenPrinter';
 import { DataBase } from '../../db/DataBase';
 import { LogStatus } from '../../console/Interfaces';
-import { myAxios as axios } from '../../utils/api';
-import { JSDOM } from 'jsdom';
-import { findNodeAndGetText } from '../../utils/htmlParsers/general';
 import { Steam } from '../../utils/htmlParsers/Steam';
 import { Op } from 'sequelize';
-import moment from 'moment';
 import { needUpdateOptions } from './config';
 
 export class UpdateSteamBasicData {
   steamDatas: SteamI[] = [];
+  isDestroyed = false;
 
   constructor(private screenPrinter: ScreenPrinter, private db: DataBase) {}
+
+  async close() {
+    this.isDestroyed = true;
+    await SteamDB.updateAll(this.steamDatas);
+  }
 
   async run() {
     const steam = await this.db.findAll<SteamDB>(SteamDB, {
@@ -33,9 +35,12 @@ export class UpdateSteamBasicData {
       this.steamDatas.push(await Steam.getSteamData(s));
       this.screenPrinter.setProgress(idx++, total);
     });
+
     await Promise.allSettled(promises).then(async () => {
-      await SteamDB.updateAll(this.steamDatas);
-      this.steamDatas = [];
+      if (this.isDestroyed) {
+        await SteamDB.updateAll(this.steamDatas);
+        this.steamDatas = [];
+      }
     });
 
     this.screenPrinter.setProgress(0, 0);

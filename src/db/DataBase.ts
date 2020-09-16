@@ -18,16 +18,14 @@ export class DataBase {
   constructor() {
     this.db = new Sequelize('sqlite:chinook.db', {
       // logging: (msg) => this.logStream.write(msg),
-      logging: true,
+      logging: false,
     });
 
     this.isReady = this.useTables(SteamDB, BazarekDB, TagDB, CategoryDB, ReviewDB);
+  }
 
-    //catches ctrl+c event
-    process.on('SIGINT', () => {
-      // this.logStream.close();
-      this.db.close();
-    });
+  close() {
+    return this.db.close();
   }
 
   useTables(...tableDBs: GenericTable[]) {
