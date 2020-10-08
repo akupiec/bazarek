@@ -1,50 +1,89 @@
 package update
 
 import (
+	"arkupiec/bazarek/application/utils"
+	"arkupiec/bazarek/model"
 	"github.com/PuerkitoBio/goquery"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
+	"gorm.io/gorm/clause"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 const MAX_BAZAREK_PAGES int = 120
+const PAGE_SIZE int = 100
 
-var db *gorm.DB
+func Bazarek(db *gorm.DB) {
+	channel := fetchAllPages()
+	games := parseAllPages(channel)
 
-func Bazarek(_db *gorm.DB) {
-	db = _db
-	fetchBazarekPage(1)
+	db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "bazarek_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
+	}).Create(&games)
 }
 
-func BazarekBasicData() {
-	for i := 0; i < MAX_BAZAREK_PAGES; i++ {
-
+func parseAllPages(channel chan [PAGE_SIZE]model.Bazarek) []model.Bazarek {
+	var games []model.Bazarek
+	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
+		pageGames := <-channel
+		for _, game := range pageGames {
+			if game.Href != "" {
+				games = append(games, game)
+			}
+		}
 	}
+	return games
 }
 
-func fetchBazarekPage(page int) {
+func fetchAllPages() chan [PAGE_SIZE]model.Bazarek {
+	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
+	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
+		go func(pageNr int) {
+			doc := fetchPage(pageNr)
+			channel <- parsePage(doc)
+		}(i)
+	}
+	return channel
+}
+
+func fetchPage(page int) *goquery.Document {
 	u, _ := url.Parse("https://bazar.lowcygier.pl/?type=&platform=&platform%5B%5D=1&platform%5B%5D=5&platform%5B%5D=7&payment=&payment%5B%5D=1&game_type=&game_type%5B%5D=game&game_type%5B%5D=dlc&game_type%5B%5D=pack&game_genre=&title=&game_id=&sort=title")
+	log.Infof("fetch success of page: %d!", page)
 	q := u.Query()
 	q.Add("per-page", "100")
 	q.Add("page", strconv.Itoa(page))
 	u.RawQuery = q.Encode()
 
-	res, err := http.Get(u.String())
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	err, doc := utils.Fetch(u.String())
 	if err != nil {
 		log.Fatal(err)
 	}
+	return doc
+}
 
-	n := doc.Find(".sidebar-reviews article .content-block").Nodes
-	log.Printf("nodes %v", n)
+func parsePage(doc *goquery.Document) [PAGE_SIZE]model.Bazarek {
+	var games [PAGE_SIZE]model.Bazarek
+
+	doc.Find("div.list-view > div").Each(func(i int, s *goquery.Selection) {
+		var game model.Bazarek
+		tS := s.Find(".media-heading a")
+		title := tS.Text()
+		href, _ := tS.Attr("href")
+		id := utils.FindInt(href)
+		prc := utils.FindFloat32(s.Find(".mobile .prc").Text())
+		offers := utils.FindUInt8(s.Find(".mobile .prc-text").Text())
+
+		game.Name = title
+		game.BazarekID = uint(id)
+		game.Href = href
+		game.Price = prc
+		game.Offers = offers
+		game.Updated = time.Now()
+		game.SteamID = nil
+		games[i] = game
+	})
+	return games
 }

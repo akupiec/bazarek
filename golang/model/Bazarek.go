@@ -1,16 +1,16 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
 type Bazarek struct {
-	gorm.Model
-	BazarekID uint
+	ID        uint   `gorm:"primaryKey"`
+	BazarekID uint   `gorm:"uniqueIndex"`
+	Href      string `gorm:"unique"`
 	Name      string
 	Price     float32
 	Offers    uint8
-	UpdatedAt time.Time
-	SteamID   uint
+	Updated   time.Time
+	SteamID   *uint `gorm:"uniqueIndex"`
 }
