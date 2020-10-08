@@ -16,37 +16,35 @@ const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
 func Bazarek(db *gorm.DB) {
-	channel := fetchAllPages()
-	games := parseAllPages(channel)
-
-	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "bazarek_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
-	}).Create(&games)
-}
-
-func parseAllPages(channel chan [PAGE_SIZE]model.Bazarek) []model.Bazarek {
-	var games []model.Bazarek
-	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
-		pageGames := <-channel
-		for _, game := range pageGames {
-			if game.Href != "" {
-				games = append(games, game)
-			}
-		}
-	}
-	return games
-}
-
-func fetchAllPages() chan [PAGE_SIZE]model.Bazarek {
 	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
 	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
 		go func(pageNr int) {
 			doc := fetchPage(pageNr)
 			channel <- parsePage(doc)
 		}(i)
+
+		games := getGamesOnPage(channel)
+		updateGamesInDb(db, games)
 	}
-	return channel
+}
+
+func updateGamesInDb(db *gorm.DB, games []model.Bazarek) {
+	db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "bazarek_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
+	}).Create(&games)
+}
+
+func getGamesOnPage(channel chan [PAGE_SIZE]model.Bazarek) []model.Bazarek {
+	var games []model.Bazarek
+	pageGames := <-channel
+	for _, game := range pageGames {
+		if game.Href != "" {
+			games = append(games, game)
+		}
+	}
+
+	return games
 }
 
 func fetchPage(page int) *goquery.Document {
