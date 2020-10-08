@@ -21,7 +21,10 @@ func FindFloat32(s string) float32 {
 	return float32(n)
 }
 
+func FindUInt32(s string) uint32 {
+	return uint32(FindInt(s))
+}
+
 func FindUInt8(s string) uint8 {
-	n, _ := strconv.Atoi(re.FindString(s))
-	return uint8(n)
+	return uint8(FindInt(s))
 }

@@ -15,7 +15,7 @@ import (
 const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
-func Bazarek(db *gorm.DB) {
+func BazarekGeneralData(db *gorm.DB) {
 	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
 	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
 		go func(pageNr int) {
@@ -70,12 +70,12 @@ func parsePage(doc *goquery.Document) [PAGE_SIZE]model.Bazarek {
 		tS := s.Find(".media-heading a")
 		title := tS.Text()
 		href, _ := tS.Attr("href")
-		id := utils.FindInt(href)
+		id := utils.FindUInt32(href)
 		prc := utils.FindFloat32(s.Find(".mobile .prc").Text())
 		offers := utils.FindUInt8(s.Find(".mobile .prc-text").Text())
 
 		game.Name = title
-		game.BazarekID = uint(id)
+		game.BazarekID = id
 		game.Href = href
 		game.Price = prc
 		game.Offers = offers
