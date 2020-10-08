@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
+	"time"
 )
 
 func init() {
@@ -16,7 +17,16 @@ func init() {
 }
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{Logger: logger.Default.LogMode(logger.Warn)})
+	newLogger := logger.New(
+		log.New(),
+		logger.Config{
+			SlowThreshold: time.Millisecond * 500, // Slow SQL threshold
+			LogLevel:      logger.Warn,            // Log level
+			Colorful:      true,                   // Disable color
+		},
+	)
+
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{Logger: newLogger})
 
 	if err != nil {
 		panic("failed to connect database")
