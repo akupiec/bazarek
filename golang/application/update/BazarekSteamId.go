@@ -12,7 +12,7 @@ import (
 
 const POOL_SIZE int = 20
 
-var total int = 0
+var total = 0
 
 func BazarekSteamId(db *gorm.DB) {
 	var results []model.Bazarek
@@ -37,9 +37,10 @@ func BazarekSteamId(db *gorm.DB) {
 					panic("what do you think you are doing!")
 				}
 				game.SteamID = &steamGame.ID
-				db.Save(&game)
-				logrus.Infof("game id: %d save done!", game.BazarekID)
 			}
+			game.Updated = time.Now()
+			db.Save(&game)
+			logrus.Infof("game id: %d save done!", game.BazarekID)
 			<-ch
 			total++
 			if total%100 == 0 {

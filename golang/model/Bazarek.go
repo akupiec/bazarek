@@ -12,5 +12,5 @@ type Bazarek struct {
 	Price     float32
 	Offers    uint8
 	Updated   time.Time
-	SteamID   *uint32 `gorm:"uniqueIndex"`
+	SteamID   *uint32 `gorm:"index"`
 }

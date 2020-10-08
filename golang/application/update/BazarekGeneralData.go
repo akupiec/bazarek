@@ -15,12 +15,27 @@ import (
 const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
+var totalA = 0
+
 func BazarekGeneralData(db *gorm.DB) {
 	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
+
+	updated := time.Now().Local().Add(time.Hour * -24)
+	var result model.Bazarek
+	db.Model(model.Bazarek{}).Where("updated < ?", updated).Find(&result)
+	if result.ID == 0 {
+		return
+	}
+
+	log.Warnf("updating... %d", MAX_BAZAREK_PAGES)
 	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
 		go func(pageNr int) {
 			doc := fetchPage(pageNr)
 			channel <- parsePage(doc)
+			totalA++
+			if totalA%10 == 0 {
+				log.Warnf("to download: %d", MAX_BAZAREK_PAGES-totalA)
+			}
 		}(i)
 
 		games := getGamesOnPage(channel)
