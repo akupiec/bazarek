@@ -12,21 +12,16 @@ import (
 
 const POOL_SIZE int = 20
 
-var total = 0
-
 func BazarekSteamId(db *gorm.DB) {
-	var results []model.Bazarek
-	updated := time.Now().Local().Add(time.Minute * -15)
-	db.Model(model.Bazarek{}).Where("updated < ? AND steam_id IS NULL", updated).Find(&results)
-
-	ch := make(chan int, POOL_SIZE)
+	bazareks := needUpdate(db)
+	p := make(chan struct{}, POOL_SIZE)
 	var wg sync.WaitGroup
 
-	logrus.Warnf("to download: %d", len(results))
-	for i := 0; i < len(results); i++ {
+	utils.StartProgress(len(bazareks))
+	for i := 0; i < len(bazareks); i++ {
 		wg.Add(1)
 		go func(game model.Bazarek) {
-			ch <- 1
+			p <- struct{}{}
 			steamGame := fetchGameInfo(game.Href)
 			if steamGame.Href != "" {
 				db.Clauses(clause.OnConflict{DoNothing: true}).Create(&steamGame)
@@ -40,17 +35,19 @@ func BazarekSteamId(db *gorm.DB) {
 			}
 			game.Updated = time.Now()
 			db.Save(&game)
-			logrus.Infof("game id: %d save done!", game.BazarekID)
-			<-ch
-			total++
-			if total%100 == 0 {
-				logrus.Warnf("to download: %d", len(results)-total)
-			}
+			logrus.Debugf("game id: %d save done!", game.BazarekID)
+			<-p
+			utils.ShowProgress(100)
 			wg.Done()
-		}(results[i])
+		}(bazareks[i])
 	}
 	wg.Wait()
-	logrus.Info(results)
+}
+
+func needUpdate(db *gorm.DB) []model.Bazarek {
+	var results []model.Bazarek
+	db.Model(model.Bazarek{}).Where("steam_id IS NULL").Find(&results)
+	return results
 }
 
 func fetchGameInfo(href string) model.Steam {

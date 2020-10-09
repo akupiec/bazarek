@@ -33,7 +33,7 @@ func FetchBasic(u string, min time.Duration, max time.Duration, retry int) (erro
 		logrus.WithFields(logrus.Fields{
 			"url":     req.URL,
 			"attempt": attempt,
-		}).Info("Sending request")
+		}).Debug("Sending request")
 	}
 
 	client.Logger = hookLogger{}

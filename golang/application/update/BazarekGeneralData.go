@@ -15,27 +15,15 @@ import (
 const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
-var totalA = 0
-
 func BazarekGeneralData(db *gorm.DB) {
 	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
 
-	updated := time.Now().Local().Add(time.Hour * -24)
-	var result model.Bazarek
-	db.Model(model.Bazarek{}).Where("updated < ?", updated).Find(&result)
-	if result.ID == 0 {
-		return
-	}
-
-	log.Warnf("updating... %d", MAX_BAZAREK_PAGES)
+	utils.StartProgress(MAX_BAZAREK_PAGES)
 	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
 		go func(pageNr int) {
-			doc := fetchPage(pageNr)
-			channel <- parsePage(doc)
-			totalA++
-			if totalA%10 == 0 {
-				log.Warnf("to download: %d", MAX_BAZAREK_PAGES-totalA)
-			}
+			d := fetchPage(pageNr)
+			channel <- parsePage(d)
+			utils.ShowProgress(10)
 		}(i)
 
 		games := getGamesOnPage(channel)
@@ -64,7 +52,7 @@ func getGamesOnPage(channel chan [PAGE_SIZE]model.Bazarek) []model.Bazarek {
 
 func fetchPage(page int) *goquery.Document {
 	u, _ := url.Parse("https://bazar.lowcygier.pl/?type=&platform=&platform%5B%5D=1&platform%5B%5D=5&platform%5B%5D=7&payment=&payment%5B%5D=1&game_type=&game_type%5B%5D=game&game_type%5B%5D=dlc&game_type%5B%5D=pack&game_genre=&title=&game_id=&sort=title")
-	log.Infof("fetch success of page: %d!", page)
+	log.Debugf("fetch success of page: %d!", page)
 	q := u.Query()
 	q.Add("per-page", "100")
 	q.Add("page", strconv.Itoa(page))
