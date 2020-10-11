@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -15,18 +16,24 @@ const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
 func BazarekGeneralData() {
-	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
+	p := make(chan struct{}, POOL_SIZE)
+	var wg sync.WaitGroup
 
 	utils.StartProgress(MAX_BAZAREK_PAGES)
 	for i := 1; i < MAX_BAZAREK_PAGES+1; i++ {
+		wg.Add(1)
 		go func(pageNr int) {
+			p <- struct{}{}
 			d := fetchPage(pageNr)
-			channel <- parsePage(d)
+			<-p
+			pageGames := parsePage(d)
+			games := filterEmpty(pageGames)
+			updateGamesInDb(games)
 			utils.ShowProgress(10)
+			wg.Done()
 		}(i)
 
-		games := getGamesOnPage(channel)
-		updateGamesInDb(games)
+		wg.Wait()
 	}
 }
 
@@ -37,9 +44,8 @@ func updateGamesInDb(games []model.Bazarek) {
 	}).Create(&games)
 }
 
-func getGamesOnPage(channel chan [PAGE_SIZE]model.Bazarek) []model.Bazarek {
+func filterEmpty(pageGames [PAGE_SIZE]model.Bazarek) []model.Bazarek {
 	var games []model.Bazarek
-	pageGames := <-channel
 	for _, game := range pageGames {
 		if game.Href != "" {
 			games = append(games, game)

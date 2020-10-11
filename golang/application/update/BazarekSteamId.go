@@ -5,11 +5,10 @@ import (
 	"arkupiec/bazarek/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm/clause"
+	"strings"
 	"sync"
 	"time"
 )
-
-const POOL_SIZE int = 20
 
 func BazarekSteamId() {
 	bazareks := needUpdate()
@@ -22,8 +21,8 @@ func BazarekSteamId() {
 		go func(game model.Bazarek) {
 			p <- struct{}{}
 			steamGame := fetchGameInfo(&game)
-			saveGameInfo(steamGame)
 			<-p
+			saveGameInfo(steamGame)
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
@@ -60,7 +59,18 @@ func fetchGameInfo(ba *model.Bazarek) model.Steam {
 		return model.Steam{}
 	}
 	steamHref, _ := doc.Find(".fa.fa-steam").Parent().Attr("href")
+	steamType := getSteamType(steamHref)
 	steamId := utils.FindUInt32(steamHref)
 
-	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba}
+	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba, SteamType: &steamType}
+}
+
+func getSteamType(href string) model.SteamType {
+	if strings.Contains(href, string(model.Game)) {
+		return model.Game
+	}
+	if strings.Contains(href, string(model.Application)) {
+		return model.Application
+	}
+	return model.Bundle
 }

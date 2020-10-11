@@ -13,7 +13,7 @@ import (
 
 func init() {
 	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 }
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 		logrus.New(),
 		logger.Config{
 			SlowThreshold: time.Millisecond * 500, // Slow SQL threshold
-			LogLevel:      logger.Info,            // Log level
+			LogLevel:      logger.Warn,            // Log level
 			Colorful:      true,                   // Disable color
 		},
 	)
