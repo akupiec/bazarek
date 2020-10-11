@@ -7,21 +7,21 @@ import (
 )
 
 func Bazarek() {
-	if isNothingToUpdate() {
-		logrus.Info("Nothing to update, in Bazarek")
-		return
+	if needBazarekUpdate() {
+		BazarekCleanupOld()
+		logrus.Info("Downloading new pages!")
+		BazarekGeneralData()
+		logrus.Info("Downloading missing steamIds")
+		BazarekSteamId()
+		BazarekCleanUpIncomplete()
 	}
-	BazarekCleanupOld()
-	logrus.Info("Downloading new pages!")
-	BazarekGeneralData()
-	logrus.Info("Downloading missing steamIds")
-	BazarekSteamId()
+	logrus.Info("Bazarek done!")
 }
 
-func isNothingToUpdate() bool {
-	u := time.Now().Local().Add(time.Hour * -12)
-	var result model.Bazarek
-	db.Model(model.Bazarek{}).Where("updated < ?", u).Find(&result)
-
-	return result.ID == 0
+func needBazarekUpdate() bool {
+	var ba model.Bazarek
+	u := time.Now().Add(time.Hour * UPDATE_TRESSHOLD_HOURS * -1)
+	db.Where("updated < ?", u).First(&ba)
+	return ba.ID != 0
+	//return true
 }

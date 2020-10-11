@@ -22,7 +22,7 @@ func BazarekSteamId() {
 			p <- struct{}{}
 			steamGame := fetchGameInfo(&game)
 			<-p
-			saveGameInfo(steamGame)
+			saveGameInfo(steamGame, game)
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
@@ -30,7 +30,7 @@ func BazarekSteamId() {
 	wg.Wait()
 }
 
-func saveGameInfo(st model.Steam) {
+func saveGameInfo(st model.Steam, ba model.Bazarek) {
 	if st.Href != "" {
 		db.Clauses(clause.OnConflict{DoNothing: true}).Create(&st)
 		if st.ID == 0 {
@@ -39,11 +39,11 @@ func saveGameInfo(st model.Steam) {
 		if st.ID == 0 {
 			panic("what do you think you are doing!")
 		}
-		st.Bazarek.SteamID = &st.ID
+		ba.SteamID = &st.ID
 	}
-	st.Bazarek.Updated = time.Now()
-	db.Save(st.Bazarek)
-	logrus.Debugf("game id: %d save done!", st.Bazarek.BazarekID)
+	ba.Updated = time.Now()
+	db.Save(ba)
+	logrus.Debugf("game id: %d save done!", ba.BazarekID)
 }
 
 func needUpdate() []model.Bazarek {
@@ -66,11 +66,11 @@ func fetchGameInfo(ba *model.Bazarek) model.Steam {
 }
 
 func getSteamType(href string) model.SteamType {
-	if strings.Contains(href, string(model.Game)) {
+	if strings.Contains(href, "app") {
 		return model.Game
 	}
-	if strings.Contains(href, string(model.Application)) {
-		return model.Application
+	if strings.Contains(href, "bundle") {
+		return model.Bundle
 	}
-	return model.Bundle
+	return ""
 }
