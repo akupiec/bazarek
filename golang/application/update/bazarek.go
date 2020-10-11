@@ -3,23 +3,22 @@ package update
 import (
 	"arkupiec/bazarek/model"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"time"
 )
 
-func Bazarek(db *gorm.DB) {
-	if isNothingToUpdate(db) {
+func Bazarek() {
+	if isNothingToUpdate() {
 		logrus.Info("Nothing to update, in Bazarek")
 		return
 	}
-	BazarekCleanupOld(db)
+	BazarekCleanupOld()
 	logrus.Info("Downloading new pages!")
-	BazarekGeneralData(db)
+	BazarekGeneralData()
 	logrus.Info("Downloading missing steamIds")
-	BazarekSteamId(db)
+	BazarekSteamId()
 }
 
-func isNothingToUpdate(db *gorm.DB) bool {
+func isNothingToUpdate() bool {
 	u := time.Now().Local().Add(time.Hour * -12)
 	var result model.Bazarek
 	db.Model(model.Bazarek{}).Where("updated < ?", u).Find(&result)

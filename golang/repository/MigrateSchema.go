@@ -3,7 +3,7 @@ package repository
 import "arkupiec/bazarek/model"
 import "gorm.io/gorm"
 
-func CreateSchema(db *gorm.DB) {
+func CreateSchema() {
 	// CreateSchema the schema
 	db.AutoMigrate(&model.Bazarek{})
 	db.AutoMigrate(&model.Steam{})

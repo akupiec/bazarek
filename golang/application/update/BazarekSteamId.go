@@ -4,7 +4,6 @@ import (
 	"arkupiec/bazarek/application/utils"
 	"arkupiec/bazarek/model"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"sync"
 	"time"
@@ -12,46 +11,50 @@ import (
 
 const POOL_SIZE int = 20
 
-func BazarekSteamId(db *gorm.DB) {
-	bazareks := needUpdate(db)
+func BazarekSteamId() {
+	bazareks := needUpdate()
 	p := make(chan struct{}, POOL_SIZE)
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(bazareks))
-	for i := 0; i < len(bazareks); i++ {
+	for _, ba := range bazareks {
 		wg.Add(1)
 		go func(game model.Bazarek) {
 			p <- struct{}{}
-			steamGame := fetchGameInfo(game.Href)
-			if steamGame.Href != "" {
-				db.Clauses(clause.OnConflict{DoNothing: true}).Create(&steamGame)
-				if steamGame.ID == 0 {
-					db.Where("steam_ref_id = ?", steamGame.SteamRefID).First(&steamGame)
-				}
-				if steamGame.ID == 0 {
-					panic("what do you think you are doing!")
-				}
-				game.SteamID = &steamGame.ID
-			}
-			game.Updated = time.Now()
-			db.Save(&game)
-			logrus.Debugf("game id: %d save done!", game.BazarekID)
+			steamGame := fetchGameInfo(&game)
+			saveGameInfo(steamGame)
 			<-p
 			utils.ShowProgress(100)
 			wg.Done()
-		}(bazareks[i])
+		}(ba)
 	}
 	wg.Wait()
 }
 
-func needUpdate(db *gorm.DB) []model.Bazarek {
+func saveGameInfo(st model.Steam) {
+	if st.Href != "" {
+		db.Clauses(clause.OnConflict{DoNothing: true}).Create(&st)
+		if st.ID == 0 {
+			db.Where("steam_ref_id = ?", st.SteamRefID).First(&st)
+		}
+		if st.ID == 0 {
+			panic("what do you think you are doing!")
+		}
+		st.Bazarek.SteamID = &st.ID
+	}
+	st.Bazarek.Updated = time.Now()
+	db.Save(st.Bazarek)
+	logrus.Debugf("game id: %d save done!", st.Bazarek.BazarekID)
+}
+
+func needUpdate() []model.Bazarek {
 	var results []model.Bazarek
 	db.Model(model.Bazarek{}).Where("steam_id IS NULL").Find(&results)
 	return results
 }
 
-func fetchGameInfo(href string) model.Steam {
-	err, doc := utils.Fetch("https://bazar.lowcygier.pl" + href)
+func fetchGameInfo(ba *model.Bazarek) model.Steam {
+	err, doc := utils.Fetch("https://bazar.lowcygier.pl" + ba.Href)
 	if err != nil {
 		logrus.Error(err)
 		return model.Steam{}
@@ -59,6 +62,5 @@ func fetchGameInfo(href string) model.Steam {
 	steamHref, _ := doc.Find(".fa.fa-steam").Parent().Attr("href")
 	steamId := utils.FindUInt32(steamHref)
 
-	return model.Steam{Href: steamHref, SteamRefID: steamId}
-
+	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba}
 }

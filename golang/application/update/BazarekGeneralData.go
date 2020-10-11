@@ -5,7 +5,6 @@ import (
 	"arkupiec/bazarek/model"
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/url"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
-func BazarekGeneralData(db *gorm.DB) {
+func BazarekGeneralData() {
 	channel := make(chan [PAGE_SIZE]model.Bazarek, MAX_BAZAREK_PAGES)
 
 	utils.StartProgress(MAX_BAZAREK_PAGES)
@@ -27,11 +26,11 @@ func BazarekGeneralData(db *gorm.DB) {
 		}(i)
 
 		games := getGamesOnPage(channel)
-		updateGamesInDb(db, games)
+		updateGamesInDb(games)
 	}
 }
 
-func updateGamesInDb(db *gorm.DB, games []model.Bazarek) {
+func updateGamesInDb(games []model.Bazarek) {
 	db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "bazarek_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
