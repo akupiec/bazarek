@@ -14,7 +14,6 @@ import (
 func SteamData() {
 	steams := needSteamUpdate()
 	p := make(chan struct{}, POOL_SIZE)
-	s := make(chan model.Steam)
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(steams))
@@ -26,14 +25,10 @@ func SteamData() {
 			fetchFullGameData(&game)
 			game.Updated = time.Now()
 			<-p
-			s <- game
+			repository.SaveSteamGame(db, &game)
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
-	}
-
-	for game := range s {
-		repository.SaveSteamGame(db, &game)
 	}
 
 	wg.Wait()

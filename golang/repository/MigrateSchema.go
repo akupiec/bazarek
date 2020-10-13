@@ -9,4 +9,5 @@ func CreateSchema(db *gorm.DB) {
 	db.AutoMigrate(&model.Steam{})
 	db.AutoMigrate(&model.Category{})
 	db.AutoMigrate(&model.Tag{})
+	db.AutoMigrate(&model.Review{})
 }

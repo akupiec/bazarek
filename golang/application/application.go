@@ -7,5 +7,5 @@ import (
 
 func Run(db *gorm.DB) {
 	update.SetDb(db)
-	update.Bazarek()
+	update.Update()
 }
