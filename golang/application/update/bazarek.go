@@ -16,6 +16,8 @@ func Bazarek() {
 		BazarekCleanUpIncomplete()
 	}
 	logrus.Info("Bazarek done!")
+	SteamData()
+	logrus.Info("Steam done!")
 }
 
 func needBazarekUpdate() bool {

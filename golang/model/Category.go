@@ -1,6 +1,6 @@
 package model
 
-type Tag struct {
+type Category struct {
 	ID   uint   `gorm:"primarykey"`
 	Name string `gorm:"unique"`
 }

@@ -27,14 +27,13 @@ func BazarekGeneralData() {
 			d := fetchPage(pageNr)
 			<-p
 			pageGames := parsePage(d)
-			games := filterEmpty(pageGames)
-			updateGamesInDb(games)
+			g := filterEmpty(pageGames)
+			updateGamesInDb(g)
 			utils.ShowProgress(10)
 			wg.Done()
 		}(i)
-
-		wg.Wait()
 	}
+	wg.Wait()
 }
 
 func updateGamesInDb(games []model.Bazarek) {

@@ -62,15 +62,15 @@ func fetchGameInfo(ba *model.Bazarek) model.Steam {
 	steamType := getSteamType(steamHref)
 	steamId := utils.FindUInt32(steamHref)
 
-	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba, SteamType: &steamType}
+	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba, SteamType: steamType}
 }
 
 func getSteamType(href string) model.SteamType {
 	if strings.Contains(href, "app") {
-		return model.Game
+		return model.SteamGame
 	}
 	if strings.Contains(href, "bundle") {
-		return model.Bundle
+		return model.SteamBundle
 	}
 	return ""
 }
