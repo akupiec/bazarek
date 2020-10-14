@@ -1,14 +1,11 @@
 package main
 
 import (
-	"arkupiec/bazarek/application"
-	"arkupiec/bazarek/repository"
+	"arkupiec/bazarek_updater/application"
+	"arkupiec/bazarek_updater/repository"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"os"
-	"time"
 )
 
 func init() {
@@ -17,21 +14,8 @@ func init() {
 }
 
 func main() {
-	newLogger := logger.New(
-		logrus.New(),
-		logger.Config{
-			SlowThreshold: time.Millisecond * 500, // Slow SQL threshold
-			LogLevel:      logger.Warn,            // Log level
-			Colorful:      true,                   // Disable color
-		},
-	)
-
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{Logger: newLogger})
-
-	if err != nil {
-		panic("failed to connect database")
-	}
-
+	d := sqlite.Open("../test.db")
+	db := repository.Connect(d)
 	repository.CreateSchema(db)
 	application.Run(db)
 }

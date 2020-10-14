@@ -1,8 +1,8 @@
 package update
 
 import (
-	"arkupiec/bazarek/application/utils"
-	"arkupiec/bazarek/model"
+	"arkupiec/bazarek_updater/application/utils"
+	"arkupiec/bazarek_updater/model"
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm/clause"

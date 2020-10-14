@@ -1,7 +1,7 @@
 package application
 
 import (
-	"arkupiec/bazarek/application/update"
+	"arkupiec/bazarek_updater/application/update"
 	"gorm.io/gorm"
 )
 

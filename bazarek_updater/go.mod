@@ -1,4 +1,4 @@
-module arkupiec/bazarek
+module arkupiec/bazarek_updater
 
 go 1.15
 

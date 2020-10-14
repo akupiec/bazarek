@@ -1,7 +1,7 @@
 package update
 
 import (
-	"arkupiec/bazarek/model"
+	"arkupiec/bazarek_updater/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"time"

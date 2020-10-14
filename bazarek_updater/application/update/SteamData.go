@@ -1,9 +1,9 @@
 package update
 
 import (
-	"arkupiec/bazarek/application/utils"
-	"arkupiec/bazarek/model"
-	"arkupiec/bazarek/repository"
+	"arkupiec/bazarek_updater/application/utils"
+	"arkupiec/bazarek_updater/model"
+	"arkupiec/bazarek_updater/repository"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"strings"

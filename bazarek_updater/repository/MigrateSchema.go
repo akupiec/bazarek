@@ -1,6 +1,6 @@
 package repository
 
-import "arkupiec/bazarek/model"
+import "arkupiec/bazarek_updater/model"
 import "gorm.io/gorm"
 
 func CreateSchema(db *gorm.DB) {

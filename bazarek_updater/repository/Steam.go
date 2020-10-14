@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"arkupiec/bazarek/model"
+	"arkupiec/bazarek_updater/model"
 	"gorm.io/gorm"
 )
 
