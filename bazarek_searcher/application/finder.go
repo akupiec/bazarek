@@ -9,36 +9,39 @@ import (
 )
 
 func finder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	q, _ := url.ParseQuery(r.URL.RawQuery)
 	price := r.URL.Query().Get("price")
 	allData := r.URL.Query().Get("allData")
 	limit := r.URL.Query().Get("limit")
+	search := r.URL.Query().Get("search")
 	tags := q["tag"]
 	categories := q["category"]
 	reviews := q["review"]
 
 	tx := db.Table("Steams AS s")
+	tx.Joins("Bazarek")
 	if price != "" {
-		tx.Joins("Bazarek")
-		tx.Where("Bazarek__price < ?", price)
+		tx.Where("Bazarek__price < ? OR (s.price IS NOT NULL AND s.price < ? AND s.price != 0)", price, price)
+	}
+	if search != "" {
+		tx.Where("Bazarek__name IS (?) OR s.name IS (?)", search, search)
 	}
 	if len(tags) > 0 {
-		tx.Where("s.id IN (?)", db.Table("tags as t").
+		tx.Where("s.id IN (?)", db.Table("steam_tag as st").
 			Select("st.steam_id").
-			Joins("LEFT JOIN steam_tag st ON t.id == st.tag_id").
-			Where("t.name IN ?", tags))
+			Where("st.tag_id IN ?", tags))
 	}
 	if len(categories) > 0 {
-		tx.Where("s.id IN (?)", db.Table("categories as c").
-			Select("st.steam_id").
-			Joins("LEFT JOIN steam_category st ON c.id == st.category_id").
-			Where("c.name IN ?", categories))
+		tx.Where("s.id IN (?)", db.Table("steam_category as sc").
+			Select("sc.steam_id").
+			Where("sc.category_id IN ?", categories))
 	}
 	if len(reviews) > 0 {
-		tx.Where("s.id IN (?)", db.Table("reviews as r").
-			Select("st.steam_id").
-			Joins("LEFT JOIN steam_review st ON r.id == st.review_id").
-			Where("r.name IN ?", reviews))
+		tx.Where("s.id IN (?)", db.Table("steam_review as sr").
+			Select("sr.steam_id").
+			Where("sr.review_id IN ?", reviews))
 	}
 	if allData == "true" {
 		tx.Preload("Tags")
@@ -52,5 +55,5 @@ func finder(w http.ResponseWriter, r *http.Request) {
 
 	var s []model.Steam
 	tx.Find(&s)
-	json.NewEncoder(w).Encode(s)
+	json.NewEncoder(w).Encode(&s)
 }
