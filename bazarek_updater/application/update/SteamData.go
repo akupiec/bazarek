@@ -6,14 +6,15 @@ import (
 	"arkupiec/bazarek_updater/repository"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
-func SteamData() {
-	steams := needSteamUpdate()
+func SteamData(steams []model.Steam) {
 	p := make(chan struct{}, POOL_SIZE)
+	toSave := make(chan model.Steam, len(steams))
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(steams))
@@ -25,24 +26,24 @@ func SteamData() {
 			fetchFullGameData(&game)
 			game.Updated = time.Now()
 			<-p
-			repository.SaveSteamGame(db, &game)
+			toSave <- game
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
 	}
-
 	wg.Wait()
+	saveAllGames(toSave)
 }
 
-func needSteamUpdate() []model.Steam {
-	var results []model.Steam
-	u := time.Now().Add(time.Hour * 24 * STEAM_UPDATE_TRESSHOLD_DAYS * -1)
-	db.Model(model.Steam{}).Where("name IS NULL OR updated < ?", u).Find(&results)
-	return results
+func saveAllGames(toSave chan model.Steam) {
+	close(toSave)
+	for game := range toSave {
+		repository.SaveSteamGame(db, &game)
+	}
 }
 
 func fetchFullGameData(game *model.Steam) *model.Steam {
-	err, doc := utils.Fetch(game.Href)
+	err, doc := utils.GetWithCookie(game.Href, "wants_mature_content=1; birthtime=312850801;")
 	if err != nil {
 		logrus.Error(err)
 		return game
@@ -51,21 +52,33 @@ func fetchFullGameData(game *model.Steam) *model.Steam {
 		return parseSteamGame(doc, game)
 	}
 	if game.SteamType == model.SteamBundle {
-		return game
+		return parseSteamBundle(doc, game)
 	}
+	return parseSteamBundle(doc, game)
+}
+
+func parseSteamBundle(doc *goquery.Document, game *model.Steam) *model.Steam {
+	n := doc.Find(".page_title_area .pageheader").Text()
+	game.Name = &n
 	return game
 }
 
 func parseSteamGame(doc *goquery.Document, game *model.Steam) *model.Steam {
+	title := doc.Find("title").Text()
+	if title == "Welcome to Steam" {
+		n := "NOT IN STEAM"
+		game.Name = &n
+		return game
+	}
 	n := doc.Find(".apphub_AppName").Text()
 	game.Name = &n
 	game.Tags = parseSteamTags(doc)
 	game.Category = parseSteamCategory(doc)
 	game.Price = parseSteamPrice(doc)
 	r, r2 := parseReviews(doc)
-	game.Review = r[:]
-	game.ReviewsCount = &r2[0]
-	game.LastReviewsCount = &r2[1]
+	game.Review = filterEmptyReviews(r)
+	game.LastReviewsCount = &r2[0]
+	game.ReviewsCount = &r2[1]
 	return game
 }
 
@@ -86,6 +99,17 @@ func parseReviews(doc *goquery.Document) ([2]model.Review, [2]uint16) {
 		r2[i] = uint16(a)
 	})
 	return r, r2
+}
+
+func filterEmptyReviews(reviews [2]model.Review) []model.Review {
+	var r []model.Review
+	reg := regexp.MustCompile(`\d .+`)
+	for _, re := range reviews {
+		if re.Name != "" && !reg.MatchString(re.Name) {
+			r = append(r, re)
+		}
+	}
+	return r
 }
 
 func parseSteamCategory(doc *goquery.Document) []model.Category {

@@ -27,7 +27,8 @@ func Update() {
 		BazarekCleanUpIncomplete()
 	}
 	logrus.Info("Bazarek done!")
-	SteamData()
+	steams := needSteamUpdate()
+	SteamData(steams)
 	logrus.Info("Steam done!")
 }
 
@@ -36,4 +37,11 @@ func needBazarekUpdate() bool {
 	u := time.Now().Add(time.Hour * UPDATE_TRESSHOLD_HOURS * -1)
 	db.Where("updated < ?", u).First(&ba)
 	return ba.ID != 0
+}
+
+func needSteamUpdate() []model.Steam {
+	var results []model.Steam
+	u := time.Now().Add(time.Hour * 24 * STEAM_UPDATE_TRESSHOLD_DAYS * -1)
+	db.Model(model.Steam{}).Where("name IS NULL OR updated < ?", u).Find(&results)
+	return results
 }

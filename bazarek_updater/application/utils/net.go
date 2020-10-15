@@ -28,6 +28,26 @@ func (h hookLogger) Debug(s string, args ...interface{}) {
 }
 
 func FetchBasic(u string, min time.Duration, max time.Duration, retry int) (error, *goquery.Document) {
+	client := createClient(min, max, retry)
+
+	res, err := client.Get(u)
+	return parseResp(err, res)
+}
+
+func parseResp(err error, res *http.Response) (error, *goquery.Document) {
+	if err != nil {
+		logrus.Fatalln(err)
+	}
+	if res.StatusCode != 200 {
+		return fmt.Errorf("status code error: %s %s", res.Status, res.Request.URL), nil
+	}
+
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	return err, doc
+}
+
+func createClient(min time.Duration, max time.Duration, retry int) *retryablehttp.Client {
 	client := retryablehttp.NewClient()
 	client.RequestLogHook = func(_ retryablehttp.Logger, req *http.Request, attempt int) {
 		logrus.WithFields(logrus.Fields{
@@ -57,20 +77,17 @@ func FetchBasic(u string, min time.Duration, max time.Duration, retry int) (erro
 
 		return false, nil
 	}
-
-	res, err := client.Get(u)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("status code error: %s %s", res.Status, res.Request.URL), nil
-	}
-
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	return err, doc
+	return client
 }
 
 func Fetch(u string) (error, *goquery.Document) {
 	return FetchBasic(u, 500*time.Millisecond, 800*time.Millisecond, 5)
+}
+
+func GetWithCookie(url string, cookie string) (error, *goquery.Document) {
+	req, _ := retryablehttp.NewRequest("GET", url, nil)
+	client := createClient(500*time.Millisecond, 800*time.Millisecond, 5)
+	req.Header.Set("Cookie", cookie)
+	res, err := client.Do(req)
+	return parseResp(err, res)
 }
