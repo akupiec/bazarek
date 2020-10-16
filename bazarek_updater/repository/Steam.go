@@ -19,7 +19,9 @@ func SaveSteamGame(db *gorm.DB, game *model.Steam) {
 			tx.FirstOrCreate(&r, r)
 			game.Review[i] = r
 		}
-
+		tx.Exec("DELETE FROM steam_review WHERE steam_id = (?)", game.ID)
+		tx.Exec("DELETE FROM steam_tag WHERE steam_id = (?)", game.ID)
+		tx.Exec("DELETE FROM steam_category WHERE steam_id = (?)", game.ID)
 		tx.Updates(game)
 		return nil
 	})

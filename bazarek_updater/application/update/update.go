@@ -33,15 +33,23 @@ func Update() {
 }
 
 func needBazarekUpdate() bool {
-	var ba model.Bazarek
 	u := time.Now().Add(time.Hour * UPDATE_TRESSHOLD_HOURS * -1)
-	db.Where("updated < ?", u).First(&ba)
-	return ba.ID != 0
+	var needUpdate int64
+	var total int64
+	db.Model(&model.Bazarek{}).Where("updated < ?", u).Count(&needUpdate)
+	db.Model(&model.Bazarek{}).Where("1=1").Count(&total)
+	return needUpdate > 0 || total == 0
 }
 
 func needSteamUpdate() []model.Steam {
 	var results []model.Steam
+	tx := db.Model(model.Steam{})
 	u := time.Now().Add(time.Hour * 24 * STEAM_UPDATE_TRESSHOLD_DAYS * -1)
-	db.Model(model.Steam{}).Where("name IS NULL OR updated < ?", u).Find(&results)
+	tx.Where("name IS NULL OR updated < ?", u)
+	//tx.Where("id IN (?)", db.Table("steam_review as sr").
+	//	Select("sr.steam_id").
+	//	Where("sr.review_id = 1"))
+	//tx.Where("1=1")
+	tx.Find(&results)
 	return results
 }
