@@ -1,0 +1,26 @@
+.ico {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  &.ico-xs {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+}
+
+.steam-ico {
+  background-image: url('../../assets/icons/steam.svg');
+}
+
+.bazarek-ico {
+  width: 3rem;
+  background-image: url('../../assets/icons/bazarek.svg');
+
+  &.ico-xs {
+    width: 1.5rem;
+  }
+}

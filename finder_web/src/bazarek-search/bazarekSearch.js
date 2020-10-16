@@ -1,8 +1,9 @@
 import React from 'react';
 import { Component } from 'react';
-import { GenericTable } from './GenericTable';
+import { GenericTable } from './GenericTable/GenericTable';
 import * as axios from 'axios';
 import { BazarekFilters } from './BazarekFilters/BazarekFilters';
+import * as Qs from 'qs';
 
 export default class BazarekSearch extends Component {
   state = {
@@ -25,17 +26,22 @@ export default class BazarekSearch extends Component {
   }
 
   doSearch() {
-    let url = 'http://localhost:9090/finder?';
-    url += this.state.tags.map(t => `tag=${t}`).join('&') + '&'
-    url += this.state.categories.map(t => `category=${t}`).join('&') + '&'
-    url += this.state.reviews.map(t => `review=${t}`).join('&') + '&'
-    url += `search=${this.state.search}&`
-    url += `reviewsCount=${this.state.reviewsCount}&`
-    url += `price=${this.state.price}&`
-    url += `limit=${this.state.limit}&`
-    axios.get(url, ).then(resp => {
-        this.setState({ data: resp.data });
-      }, (e) => console.error(e));
+    let url = 'http://localhost:9090/finder';
+    const params = {
+      limit: this.state.limit,
+      price: this.state.price,
+      reviewsCount: this.state.reviewsCount,
+      search: this.state.search,
+      review: this.state.reviews,
+      category: this.state.categories,
+      tag: this.state.tags,
+    };
+    const paramsSerializer = function (params) {
+      return Qs.stringify(params, {arrayFormat: 'repeat'})
+    }
+    axios.get(url, { params, paramsSerializer }).then(resp => {
+      this.setState({ data: resp.data });
+    }, (e) => console.error(e));
   }
 
   onChangeCategories(ev) {

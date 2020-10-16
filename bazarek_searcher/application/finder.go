@@ -15,6 +15,7 @@ func finder(w http.ResponseWriter, r *http.Request) {
 	price := r.URL.Query().Get("price")
 	allData := r.URL.Query().Get("allData")
 	limit := r.URL.Query().Get("limit")
+	reviewsCount := r.URL.Query().Get("reviewsCount")
 	search := r.URL.Query().Get("search")
 	tags := q["tag"]
 	categories := q["category"]
@@ -43,6 +44,10 @@ func finder(w http.ResponseWriter, r *http.Request) {
 			Select("sr.steam_id").
 			Where("sr.review_id IN ?", reviews))
 	}
+	if reviewsCount != "" {
+		tx.Where("s.reviews_count >= (?)", reviewsCount)
+	}
+
 	if allData == "true" {
 		tx.Preload("Tags")
 	}
@@ -54,6 +59,9 @@ func finder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var s []model.Steam
+	tx.Preload("Review")
+	tx.Preload("Tags")
+	tx.Preload("Category")
 	tx.Find(&s)
 	json.NewEncoder(w).Encode(&s)
 }

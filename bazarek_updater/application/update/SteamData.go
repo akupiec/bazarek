@@ -77,8 +77,12 @@ func parseSteamGame(doc *goquery.Document, game *model.Steam) *model.Steam {
 	game.Price = parseSteamPrice(doc)
 	r, r2 := parseReviews(doc)
 	game.Review = filterEmptyReviews(r)
-	game.LastReviewsCount = &r2[0]
-	game.ReviewsCount = &r2[1]
+	if len(game.Review) == 2 {
+		game.LastReviewsCount = &r2[0]
+		game.ReviewsCount = &r2[1]
+	} else {
+		game.ReviewsCount = &r2[0]
+	}
 	return game
 }
 
