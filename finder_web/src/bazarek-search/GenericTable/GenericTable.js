@@ -8,7 +8,7 @@ const RowsRenderer = ({ data, columns }) => {
   if (data.length) {
     return data.map((d) => {
       const Row = columns.map((c, idx) => {
-        const key = data.id +'_' + idx;
+        const key = data.id + '_' + idx;
         if (typeof c.value === 'function') {
           return <td key={key}>{c.value(d)}</td>;
         }
@@ -21,15 +21,7 @@ const RowsRenderer = ({ data, columns }) => {
   return <></>;
 };
 
-export function GenericTable({ data }) {
-
-  const columns = [
-    { label: 'Name', value: 'Name' },
-    { label: 'Hrefs', value: HrefCellRenderer },
-    { label: 'Price', value: PriceCellRenderer },
-    { label: 'Reviews', value: StarCellRenderer },
-  ];
-
+export function GenericTable({ data, columns}) {
   const Columns = columns.map(c => <th scope="col" key={c.label}>{c.label}</th>);
   const Rows = RowsRenderer({ data, columns });
 

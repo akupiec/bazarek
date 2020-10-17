@@ -4,6 +4,9 @@ import { GenericTable } from './GenericTable/GenericTable';
 import * as axios from 'axios';
 import { BazarekFilters } from './BazarekFilters/BazarekFilters';
 import * as Qs from 'qs';
+import { HrefCellRenderer } from './GenericTable/CellRenderers/HrefCellRenderer';
+import { PriceCellRenderer } from './GenericTable/CellRenderers/PriceCellRenderer';
+import { StarCellRenderer } from './GenericTable/CellRenderers/StarCellRenderer';
 
 export default class BazarekSearch extends Component {
   state = {
@@ -16,6 +19,12 @@ export default class BazarekSearch extends Component {
     categories: [],
     toPick: null,
     data: [],
+    columns: [
+      { key: 'name', label: 'Name', value: 'Name', sort: '' },
+      { label: 'Hrefs', value: HrefCellRenderer },
+      { key: 'price', label: 'Price', value: PriceCellRenderer, sort: 'asc' },
+      { key: 'reviews', label: 'Reviews', value: StarCellRenderer, sort: '' },
+    ],
   };
 
   componentDidMount() {
@@ -35,10 +44,11 @@ export default class BazarekSearch extends Component {
       review: this.state.reviews,
       category: this.state.categories,
       tag: this.state.tags,
+      allData: true,
     };
-    const paramsSerializer = function (params) {
-      return Qs.stringify(params, {arrayFormat: 'repeat'})
-    }
+    const paramsSerializer = function(params) {
+      return Qs.stringify(params, { arrayFormat: 'repeat' });
+    };
     axios.get(url, { params, paramsSerializer }).then(resp => {
       this.setState({ data: resp.data });
     }, (e) => console.error(e));
@@ -91,7 +101,7 @@ export default class BazarekSearch extends Component {
                       onChangeLimit={this.onChangeLimit.bind(this)}
                       onChangeSearch={this.onChangeSearch.bind(this)}
       />
-      <GenericTable data={this.state.data} />
+      <GenericTable data={this.state.data} columns={this.state.columns} />
     </>;
     const Loading = <div>Loading data!</div>;
 

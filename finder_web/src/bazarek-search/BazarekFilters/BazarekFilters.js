@@ -1,10 +1,10 @@
-import './filers.css';
+import './filers.scss';
 import React from 'react';
 import AutoComplete from 'react-select';
 
 
 function AutoSelectFilter({ options, name, onChange }) {
-  return (<div className="input-group">
+  return (<div className={'input-group filter-' + name}>
     <div className="input-group-prepend">
       <label className="input-group-text">{name}</label>
     </div>
@@ -16,7 +16,7 @@ function BasicInput({ name, value, onChange }) {
   const parseValue = (event) =>  {
     onChange(event.currentTarget.value)
   }
-  return <div className="input-group">
+  return <div className={'input-group filter-' + name}>
     <div className="input-group-prepend">
       <span className="input-group-text">{name}</span>
     </div>
@@ -29,13 +29,13 @@ export function BazarekFilters({ Tag, Review, Category, reviewsCount, price,limi
   const tags = Tag.map(parser);
   const reviews = Review.map(parser);
   const categories = Category.map(parser);
-  return <>
+  return <div className="grid-filters">
     <AutoSelectFilter onChange={onChangeCategories} options={categories} name="Categories" />
     <AutoSelectFilter onChange={onChangeReviews} options={reviews} name="Reviews" />
     <AutoSelectFilter onChange={onChangeTags} options={tags} name="Tags" />
-    <BasicInput name="Reviews Count" value={reviewsCount} onChange={onChangeReviewsCount} />
+    <BasicInput name="Reviews_Count" value={reviewsCount} onChange={onChangeReviewsCount} />
     <BasicInput name="Max Price" value={price} onChange={onChangePrice} />
     <BasicInput name="Limit" value={limit} onChange={onChangeLimit} />
-    <BasicInput name="search" value={search} onChange={onChangeSearch} />
-  </>;
+    <BasicInput name="Search" value={search} onChange={onChangeSearch} />
+  </div>;
 }

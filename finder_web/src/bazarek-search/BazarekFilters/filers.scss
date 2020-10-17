@@ -10,3 +10,15 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }
+
+.grid-filters {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    .filter-Categories,
+    .filter-Reviews,
+    .filter-Search,
+    .filter-Tags {
+        grid-column-start: 3 span;
+    }
+}
