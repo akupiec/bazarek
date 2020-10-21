@@ -1,10 +1,10 @@
 package repository
 
 import "arkupiec/bazarek_updater/model"
-import "gorm.io/gorm"
 
-func CreateSchema(db *gorm.DB) {
+func CreateSchema() {
 	// CreateSchema the schema
+	db := DB
 	db.AutoMigrate(&model.Bazarek{})
 	db.AutoMigrate(&model.Steam{})
 	db.AutoMigrate(&model.Category{})

@@ -2,12 +2,17 @@ package repository
 
 import (
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"time"
 )
 
-func Connect(d gorm.Dialector) *gorm.DB {
+
+var DB *gorm.DB
+
+func Connect() {
+	d := sqlite.Open("../test.db")
 	newLogger := logger.New(
 		logrus.New(),
 		logger.Config{
@@ -18,9 +23,8 @@ func Connect(d gorm.Dialector) *gorm.DB {
 	)
 
 	db, err := gorm.Open(d, &gorm.Config{Logger: newLogger})
-
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return db
+	DB = db
 }
