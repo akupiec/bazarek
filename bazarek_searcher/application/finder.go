@@ -1,11 +1,10 @@
 package application
 
 import (
-	"arkupiec/bazarek_searcher/model"
+	"arkupiec/bazarek_searcher/repository"
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 func finder(w http.ResponseWriter, r *http.Request) {
@@ -21,47 +20,16 @@ func finder(w http.ResponseWriter, r *http.Request) {
 	categories := q["category"]
 	reviews := q["review"]
 
-	tx := db.Table("Steams AS s")
-	tx.Joins("Bazarek")
-	if price != "" {
-		tx.Where("Bazarek__price < ? OR (s.price IS NOT NULL AND s.price < ? AND s.price != 0)", price, price)
+	p := repository.SearchParams{
+		Price:        price,
+		Search:       search,
+		Limit:        limit,
+		AllData:      allData,
+		ReviewsCount: reviewsCount,
+		Reviews:      reviews,
+		Tags:         tags,
+		Categories:   categories,
 	}
-	if search != "" {
-		tx.Where("Bazarek__name IS (?) OR s.name IS (?)", search, search)
-	}
-	if len(tags) > 0 {
-		tx.Where("s.id IN (?)", db.Table("steam_tag as st").
-			Select("st.steam_id").
-			Where("st.tag_id IN ?", tags))
-	}
-	if len(categories) > 0 {
-		tx.Where("s.id IN (?)", db.Table("steam_category as sc").
-			Select("sc.steam_id").
-			Where("sc.category_id IN ?", categories))
-	}
-	if len(reviews) > 0 {
-		tx.Where("s.id IN (?)", db.Table("steam_review as sr").
-			Select("sr.steam_id").
-			Where("sr.review_id IN ?", reviews))
-	}
-	if reviewsCount != "" {
-		tx.Where("s.reviews_count >= (?)", reviewsCount)
-	}
-
-	if allData == "true" {
-		tx.Preload("Tags")
-	}
-
-	if i, _ := strconv.Atoi(limit); i < 300 && i > 0 {
-		tx.Limit(i)
-	} else {
-		tx.Limit(10)
-	}
-
-	var s []model.Steam
-	tx.Preload("Review")
-	tx.Preload("Tags")
-	tx.Preload("Category")
-	tx.Find(&s)
+	s := repository.SearchGames(&p)
 	json.NewEncoder(w).Encode(&s)
 }

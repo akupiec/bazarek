@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var DB *gorm.DB
+
 func Connect(d gorm.Dialector) *gorm.DB {
 	newLogger := logger.New(
 		logrus.New(),
@@ -18,6 +20,7 @@ func Connect(d gorm.Dialector) *gorm.DB {
 	)
 
 	db, err := gorm.Open(d, &gorm.Config{Logger: newLogger})
+	DB = db
 
 	if err != nil {
 		panic("failed to connect database")
