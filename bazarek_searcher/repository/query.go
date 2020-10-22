@@ -3,19 +3,21 @@ package repository
 import (
 	"arkupiec/bazarek_searcher/model"
 	"gorm.io/gorm"
-	"strconv"
 	"strings"
 )
 
 type SearchParams struct {
-	Price        string
-	Search       string
-	Limit        string
-	AllData      string
-	ReviewsCount string
-	Reviews      []string
-	Tags         []string
-	Categories   []string
+	Price         string
+	Search        string
+	Limit         int
+	AllData       bool
+	ReviewsCount  string
+	Reviews       []string
+	ReviewsAnd    bool
+	Tags          []string
+	TagsAnd       bool
+	Categories    []string
+	CategoriesAnd bool
 }
 
 func SearchGames(p *SearchParams) []model.Steam {
@@ -23,9 +25,9 @@ func SearchGames(p *SearchParams) []model.Steam {
 	tx := db.Table("Steams AS s")
 	gameFilterPrice(p.Price, tx)
 	gameFilterName(p.Search, tx)
-	gameFilterTags(p.Tags, tx)
-	gameFilterCategory(p.Categories, tx)
-	gameFilterReview(p.Reviews, tx)
+	gameFilterTags(p.Tags, p.TagsAnd, tx)
+	gameFilterCategory(p.Categories, p.CategoriesAnd, tx)
+	gameFilterReview(p.Reviews, p.ReviewsAnd, tx)
 	gameFilterReviewCount(p.ReviewsCount, tx)
 	includeChildData(p.AllData, tx)
 	gameLimit(p.Limit, tx)
@@ -34,16 +36,16 @@ func SearchGames(p *SearchParams) []model.Steam {
 	return s
 }
 
-func gameLimit(limit string, tx *gorm.DB) {
-	if i, _ := strconv.Atoi(limit); i < 300 && i > 0 {
+func gameLimit(i int, tx *gorm.DB) {
+	if i < 300 && i > 0 {
 		tx.Limit(i)
 	} else {
 		tx.Limit(10)
 	}
 }
 
-func includeChildData(allData string, tx *gorm.DB) {
-	if allData == "true" {
+func includeChildData(allData bool, tx *gorm.DB) {
+	if allData == true {
 		tx.Preload("Review")
 		tx.Preload("Tags")
 		tx.Preload("Category")
@@ -63,7 +65,7 @@ func gameFilterPrice(price string, tx *gorm.DB) {
 	}
 }
 
-func gameFilterReview(reviews []string, tx *gorm.DB) {
+func gameFilterReview(reviews []string, _ bool, tx *gorm.DB) {
 	if len(reviews) > 0 {
 		tx.Where("s.id IN (?)", DB.Table("steam_review as sr").
 			Select("sr.steam_id").
@@ -71,7 +73,7 @@ func gameFilterReview(reviews []string, tx *gorm.DB) {
 	}
 }
 
-func gameFilterCategory(categories []string, tx *gorm.DB) {
+func gameFilterCategory(categories []string, _ bool, tx *gorm.DB) {
 	if len(categories) > 0 {
 		tx.Where("s.id IN (?)", DB.Table("steam_category as sc").
 			Select("sc.steam_id").
@@ -79,7 +81,7 @@ func gameFilterCategory(categories []string, tx *gorm.DB) {
 	}
 }
 
-func gameFilterTags(tags []string, tx *gorm.DB) {
+func gameFilterTags(tags []string, _ bool, tx *gorm.DB) {
 	if len(tags) > 0 {
 		tx.Where("s.id IN (?)", DB.Table("steam_tag as st").
 			Select("st.steam_id").

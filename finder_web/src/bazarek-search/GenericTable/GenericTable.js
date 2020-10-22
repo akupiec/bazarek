@@ -1,8 +1,5 @@
 import React from 'react';
-import { PriceCellRenderer } from './CellRenderers/PriceCellRenderer';
 import './cellRenderers.scss';
-import { HrefCellRenderer } from './CellRenderers/HrefCellRenderer';
-import { StarCellRenderer } from './CellRenderers/StarCellRenderer';
 
 const RowsRenderer = ({ data, columns }) => {
   if (data.length) {

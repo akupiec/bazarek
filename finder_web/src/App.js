@@ -1,5 +1,5 @@
 import React from 'react';
-import BazarekSearch from './bazarek-search/bazarekSearch';
+import { BazarekSearch } from './bazarek-search/BazarekSearch';
 
 function App() {
   return (
