@@ -25,13 +25,13 @@ func saveBazarek(bazarek *model.Bazarek) {
 	db := repository.DB
 	bazarek.Updated = time.Now()
 
-	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "bazarek_ref_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
-	}).Create(&bazarek)
+	a := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&bazarek)
 
-	if bazarek.ID == 0 {
-		db.Model(model.Bazarek{}).Where("bazarek_ref_id = (?)", bazarek.BazarekRefID).First(&bazarek)
+	if a.RowsAffected == 0 {
+		var ret model.Bazarek
+		db.Model(model.Bazarek{}).Where("bazarek_ref_id = (?)", bazarek.BazarekRefID).First(&ret)
+		bazarek.ID = ret.ID
+		db.Save(bazarek)
 	}
 }
 

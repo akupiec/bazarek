@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const MAX_BAZAREK_PAGES int = 120
+const MAX_BAZAREK_PAGES int = 50
 const POOL_SIZE int = 20
 const UPDATE_TRESSHOLD_HOURS = 12
 const STEAM_UPDATE_TRESSHOLD_DAYS = 4

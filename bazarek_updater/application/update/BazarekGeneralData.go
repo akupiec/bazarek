@@ -16,6 +16,7 @@ const PAGE_SIZE int = 100
 
 func BazarekGeneralData() {
 	p := make(chan struct{}, POOL_SIZE)
+	toSave := make(chan []model.Game, MAX_BAZAREK_PAGES)
 	var wg sync.WaitGroup
 
 	utils.StartProgress(MAX_BAZAREK_PAGES)
@@ -26,12 +27,17 @@ func BazarekGeneralData() {
 			d := fetchPage(pageNr)
 			<-p
 			games := parsePage(d)
-			services.SaveBulkGamesWithBazareks(games)
+			toSave <- games
 			utils.ShowProgress(10)
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+	close(toSave)
+
+	for g := range toSave {
+		services.SaveBulkGamesWithBazareks(g)
+	}
 }
 
 func filterEmpty(pageGames [PAGE_SIZE]model.Game) []model.Game {

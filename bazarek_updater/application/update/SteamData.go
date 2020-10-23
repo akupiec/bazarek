@@ -48,7 +48,9 @@ func fetchFullGameData(game *model.Game) *model.Game {
 
 func parseSteamBundle(doc *goquery.Document, game *model.Game) *model.Game {
 	n := doc.Find(".page_title_area .pageheader").Text()
-	game.Name = n
+	if n != "" {
+		game.Name = n
+	}
 	var i uint16 = 0
 	game.ReviewsCount = &i
 	return game
