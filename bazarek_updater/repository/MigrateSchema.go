@@ -1,9 +1,11 @@
 package repository
 
-import "arkupiec/bazarek_updater/model"
+import (
+	"arkupiec/bazarek_updater/model"
+	"gorm.io/gorm/clause"
+)
 
 func CreateSchema() {
-	// CreateSchema the schema
 	db := DB
 	db.AutoMigrate(&model.Bazarek{})
 	db.AutoMigrate(&model.Steam{})
@@ -12,13 +14,14 @@ func CreateSchema() {
 	db.AutoMigrate(&model.Tag{})
 	db.AutoMigrate(&model.Review{})
 
-	db.Exec("INSERT INTO reviews (id, name) VALUES (1, 'Overwhelmingly Negative');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (2, 'Very Negative');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (3, 'Negative');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (4, 'Mostly Negative');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (5, 'Mixed');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (6, 'Mostly Positive');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (7, 'Positive');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (8, 'Very Positive');")
-	db.Exec("INSERT INTO reviews (id, name) VALUES (9, 'Overwhelmingly Positive');")
+	tx := db.Begin()
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{1, "Overwhelmingly Negative"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{2, "Very Negative"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{3, "Negative"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{4, "Mostly Negative"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{5, "Mixed"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{6, "Mostly Positive"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{7, "Positive"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{8, "Very Positive"})
+	tx.Commit()
 }
