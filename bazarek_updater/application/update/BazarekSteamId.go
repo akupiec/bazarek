@@ -3,26 +3,25 @@ package update
 import (
 	"arkupiec/bazarek_updater/application/utils"
 	"arkupiec/bazarek_updater/model"
+	"arkupiec/bazarek_updater/repository/services"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm/clause"
 	"strings"
 	"sync"
-	"time"
 )
 
 func BazarekSteamId() {
-	bazareks := needUpdate()
+	games := services.GetGamesWithMissingSteamsEager()
 	p := make(chan struct{}, POOL_SIZE)
 	var wg sync.WaitGroup
 
-	utils.StartProgress(len(bazareks))
-	for _, ba := range bazareks {
+	utils.StartProgress(len(games))
+	for _, ba := range games {
 		wg.Add(1)
-		go func(game model.Bazarek) {
+		go func(game model.Game) {
 			p <- struct{}{}
-			steamGame := fetchGameInfo(&game)
+			fetchGameInfo(&game)
+			services.SaveGame(&game)
 			<-p
-			saveGameInfo(steamGame, game)
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
@@ -30,39 +29,17 @@ func BazarekSteamId() {
 	wg.Wait()
 }
 
-func saveGameInfo(st model.Steam, ba model.Bazarek) {
-	if st.Href != "" {
-		db.Clauses(clause.OnConflict{DoNothing: true}).Create(&st)
-		if st.ID == 0 {
-			db.Where("steam_ref_id = ?", st.SteamRefID).First(&st)
-		}
-		if st.ID == 0 {
-			panic("what do you think you are doing!")
-		}
-		ba.SteamID = &st.ID
-	}
-	ba.Updated = time.Now()
-	db.Save(ba)
-	logrus.Debugf("game id: %d save done!", ba.BazarekID)
-}
-
-func needUpdate() []model.Bazarek {
-	var results []model.Bazarek
-	db.Model(model.Bazarek{}).Where("steam_id IS NULL").Find(&results)
-	return results
-}
-
-func fetchGameInfo(ba *model.Bazarek) model.Steam {
-	err, doc := utils.Fetch("https://bazar.lowcygier.pl" + ba.Href)
+func fetchGameInfo(game *model.Game) {
+	err, doc := utils.Fetch("https://bazar.lowcygier.pl" + game.Bazarek.Href)
 	if err != nil {
 		logrus.Error(err)
-		return model.Steam{}
+		return
 	}
 	steamHref, _ := doc.Find(".fa.fa-steam").Parent().Attr("href")
 	steamType := getSteamType(steamHref)
 	steamId := utils.FindUInt32(steamHref)
-
-	return model.Steam{Href: steamHref, SteamRefID: steamId, Bazarek: ba, SteamType: steamType}
+	steam := model.Steam{Href: steamHref, SteamRefID: steamId, SteamType: steamType}
+	game.Steam = &steam
 }
 
 func getSteamType(href string) model.SteamType {

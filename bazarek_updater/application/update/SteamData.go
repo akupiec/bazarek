@@ -3,86 +3,73 @@ package update
 import (
 	"arkupiec/bazarek_updater/application/utils"
 	"arkupiec/bazarek_updater/model"
-	"arkupiec/bazarek_updater/repository"
+	"arkupiec/bazarek_updater/repository/services"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
-	"regexp"
 	"strings"
 	"sync"
-	"time"
 )
 
-func SteamData(steams []model.Steam) {
+func SteamData(games []model.Game) {
 	p := make(chan struct{}, POOL_SIZE)
-	toSave := make(chan model.Steam, len(steams))
 	var wg sync.WaitGroup
 
-	utils.StartProgress(len(steams))
-
-	for _, ba := range steams {
+	utils.StartProgress(len(games))
+	for _, g := range games {
 		wg.Add(1)
-		go func(game model.Steam) {
+		go func(game model.Game) {
 			p <- struct{}{}
 			fetchFullGameData(&game)
-			game.Updated = time.Now()
 			<-p
-			toSave <- game
+			services.SaveGame(&game)
 			utils.ShowProgress(100)
 			wg.Done()
-		}(ba)
+		}(g)
 	}
 	wg.Wait()
-	saveAllGames(toSave)
 }
 
-func saveAllGames(toSave chan model.Steam) {
-	close(toSave)
-	for game := range toSave {
-		repository.SaveSteamGame(db, &game)
-	}
-}
-
-func fetchFullGameData(game *model.Steam) *model.Steam {
-	err, doc := utils.GetWithCookie(game.Href, "wants_mature_content=1; birthtime=312850801;")
+func fetchFullGameData(game *model.Game) *model.Game {
+	err, doc := utils.GetWithCookie(game.Steam.Href, "wants_mature_content=1; birthtime=312850801;")
 	if err != nil {
 		logrus.Error(err)
+		game.Steam = nil
+		*game.ReviewsCount = 0
 		return game
 	}
-	if game.SteamType == model.SteamGame {
+	if game.Steam.SteamType == model.SteamGame {
 		return parseSteamGame(doc, game)
 	}
-	if game.SteamType == model.SteamBundle {
+	if game.Steam.SteamType == model.SteamBundle {
 		return parseSteamBundle(doc, game)
 	}
 	return parseSteamBundle(doc, game)
 }
 
-func parseSteamBundle(doc *goquery.Document, game *model.Steam) *model.Steam {
+func parseSteamBundle(doc *goquery.Document, game *model.Game) *model.Game {
 	n := doc.Find(".page_title_area .pageheader").Text()
-	game.Name = &n
+	game.Name = n
+	var i uint16 = 0
+	game.ReviewsCount = &i
 	return game
 }
 
-func parseSteamGame(doc *goquery.Document, game *model.Steam) *model.Steam {
+func parseSteamGame(doc *goquery.Document, game *model.Game) *model.Game {
 	title := doc.Find("title").Text()
 	if title == "Welcome to Steam" {
-		n := "NOT IN STEAM"
-		game.Name = &n
+		game.Steam = nil
+		u := uint16(0)
+		game.ReviewsCount = &u
 		return game
 	}
 	n := doc.Find(".apphub_AppName").Text()
-	game.Name = &n
+	game.Name = n
 	game.Tags = parseSteamTags(doc)
 	game.Category = parseSteamCategory(doc)
-	game.Price = parseSteamPrice(doc)
-	r, r2 := parseReviews(doc)
-	game.Review = filterEmptyReviews(r)
-	if len(game.Review) == 2 {
-		game.LastReviewsCount = &r2[0]
-		game.ReviewsCount = &r2[1]
-	} else {
-		game.ReviewsCount = &r2[0]
-	}
+	game.Steam.Price = parseSteamPrice(doc)
+	review, revCount := parseReviews(doc)
+	game.Review = &review
+	game.ReviewsCount = &revCount
 	return game
 }
 
@@ -91,29 +78,34 @@ func parseSteamPrice(doc *goquery.Document) *float32 {
 	return &f
 }
 
-func parseReviews(doc *goquery.Document) ([2]model.Review, [2]uint16) {
-	var r [2]model.Review
-	var r2 [2]uint16
+func parseReviews(doc *goquery.Document) (model.Review, uint16) {
+	var r []model.Review
+	var r2 []uint16
 	doc.Find(".user_reviews_summary_row .game_review_summary").Each(func(i int, s *goquery.Selection) {
-		r[i] = model.Review{Name: s.Text()}
+		text := s.Text()
+		r = append(r, model.Review{Name: text})
 	})
 	doc.Find(".user_reviews_summary_row .responsive_hidden").Each(func(i int, s *goquery.Selection) {
 		text := s.Text()
 		a := utils.FindIntSeparated(text)
-		r2[i] = uint16(a)
+		r2 = append(r2, uint16(a))
 	})
-	return r, r2
-}
-
-func filterEmptyReviews(reviews [2]model.Review) []model.Review {
-	var r []model.Review
-	reg := regexp.MustCompile(`\d .+`)
-	for _, re := range reviews {
-		if re.Name != "" && !reg.MatchString(re.Name) {
-			r = append(r, re)
-		}
+	var review model.Review
+	var count uint16
+	if len(r2) > 1 { // multi review over 10
+		review = r[1]
+		count = r2[1]
+	} else if len(r2) > 0 { // some reviews over 10
+		review = r[0]
+		count = r2[0]
+	} else if len(r) == 1 && len(r2) == 0 { // reviews less then 10
+		c := utils.FindInt(r[0].Name)
+		count = uint16(c)
+	} else if len(r) == 0 && len(r2) == 0 { //no user reviews
+		count = 0
 	}
-	return r
+
+	return review, count
 }
 
 func parseSteamCategory(doc *goquery.Document) []model.Category {

@@ -3,16 +3,15 @@ package update
 import (
 	"arkupiec/bazarek_updater/application/utils"
 	"arkupiec/bazarek_updater/model"
+	"arkupiec/bazarek_updater/repository/services"
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm/clause"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
 )
 
-const MAX_BAZAREK_PAGES int = 120
 const PAGE_SIZE int = 100
 
 func BazarekGeneralData() {
@@ -26,9 +25,8 @@ func BazarekGeneralData() {
 			p <- struct{}{}
 			d := fetchPage(pageNr)
 			<-p
-			pageGames := parsePage(d)
-			g := filterEmpty(pageGames)
-			updateGamesInDb(g)
+			games := parsePage(d)
+			services.SaveBulkGamesWithBazareks(games)
 			utils.ShowProgress(10)
 			wg.Done()
 		}(i)
@@ -36,18 +34,11 @@ func BazarekGeneralData() {
 	wg.Wait()
 }
 
-func updateGamesInDb(games []model.Bazarek) {
-	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "bazarek_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
-	}).Create(&games)
-}
-
-func filterEmpty(pageGames [PAGE_SIZE]model.Bazarek) []model.Bazarek {
-	var games []model.Bazarek
-	for _, game := range pageGames {
-		if game.Href != "" {
-			games = append(games, game)
+func filterEmpty(pageGames [PAGE_SIZE]model.Game) []model.Game {
+	var games []model.Game
+	for _, g := range pageGames {
+		if g.Bazarek != nil {
+			games = append(games, g)
 		}
 	}
 
@@ -69,26 +60,30 @@ func fetchPage(page int) *goquery.Document {
 	return doc
 }
 
-func parsePage(doc *goquery.Document) [PAGE_SIZE]model.Bazarek {
-	var games [PAGE_SIZE]model.Bazarek
+func parsePage(doc *goquery.Document) []model.Game {
+	var games [PAGE_SIZE]model.Game
 
 	doc.Find("div.list-view > div").Each(func(i int, s *goquery.Selection) {
-		var game model.Bazarek
+		var bazarek model.Bazarek
+		var game model.Game
 		tS := s.Find(".media-heading a")
-		title := tS.Text()
+		name := tS.Text()
 		href, _ := tS.Attr("href")
 		id := utils.FindUInt32(href)
 		prc := utils.FindFloat32(s.Find(".mobile .prc").Text())
 		offers := utils.FindUInt8(s.Find(".mobile .prc-text").Text())
 
-		game.Name = title
-		game.BazarekID = id
-		game.Href = href
-		game.Price = prc
-		game.Offers = offers
-		game.Updated = time.Now()
-		game.SteamID = nil
+		bazarek.BazarekRefID = id
+		bazarek.Href = href
+		bazarek.Price = prc
+		bazarek.Offers = offers
+		bazarek.Updated = time.Now()
+		if game.Name == "" {
+			game.Name = name
+		}
+		game.Bazarek = &bazarek
 		games[i] = game
 	})
-	return games
+
+	return filterEmpty(games)
 }

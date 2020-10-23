@@ -1,6 +1,6 @@
 package model
 
 type Review struct {
-	ID   uint   `gorm:"primarykey"`
+	ID   uint32 `gorm:"primarykey"`
 	Name string `gorm:"unique"`
 }

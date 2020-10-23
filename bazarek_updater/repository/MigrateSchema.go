@@ -7,6 +7,7 @@ func CreateSchema() {
 	db := DB
 	db.AutoMigrate(&model.Bazarek{})
 	db.AutoMigrate(&model.Steam{})
+	db.AutoMigrate(&model.Game{})
 	db.AutoMigrate(&model.Category{})
 	db.AutoMigrate(&model.Tag{})
 	db.AutoMigrate(&model.Review{})
