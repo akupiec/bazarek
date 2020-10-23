@@ -11,6 +11,7 @@ import (
 
 func BazarekSteamId() {
 	games := services.GetGamesWithMissingSteamsEager()
+	toSave := make(chan model.Game, len(games))
 	p := make(chan struct{}, POOL_SIZE)
 	var wg sync.WaitGroup
 
@@ -20,13 +21,16 @@ func BazarekSteamId() {
 		go func(game model.Game) {
 			p <- struct{}{}
 			fetchGameInfo(&game)
-			services.SaveGame(&game)
+			toSave <- game
 			<-p
 			utils.ShowProgress(100)
 			wg.Done()
 		}(ba)
 	}
 	wg.Wait()
+
+	close(toSave)
+	services.SaveGameNameWithSteam(toSave)
 }
 
 func fetchGameInfo(game *model.Game) {

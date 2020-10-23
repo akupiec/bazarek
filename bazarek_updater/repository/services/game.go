@@ -5,6 +5,7 @@ import (
 	"arkupiec/bazarek_updater/repository"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 func GetGamesWithMissingSteamsEager() []model.Game {
@@ -33,27 +34,80 @@ func SaveGame(game *model.Game) {
 		game.ReviewID = &r.ID
 	}
 
-	//if game.Category != nil && len(game.Category) > 0 {
-	//
-	//}
-
 	game.Bazarek = nil
 	game.Review = nil
 	game.Steam = nil
-	//game.Category = nil
-	//game.Tags = nil
 
 	db.Save(game)
 	logrus.Debugf("game id: %d save done!", game.ID)
 }
 
-func SaveBulkGamesWithBazareks(games []model.Game) {
-	for i, _ := range games {
-		b := games[i].Bazarek
-		saveBazarek(b)
-		games[i].BazarekID = &b.ID
-		games[i].Bazarek = nil
+func SaveGameNameWithBazarek(toSave chan model.Game) {
+	t := time.Now()
+	logrus.Info("Saving Game bazareks Start!")
+	db := repository.DB
+	games := make([]model.Game, 0)
+	for g := range toSave {
+		g.Bazarek.Updated = time.Now()
+		games = append(games, g)
 	}
 
-	repository.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&games)
+	tx := db.Begin()
+	for i, _ := range games {
+		ret := *(games[i]).Bazarek
+		tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "bazarek_ref_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
+		}).Create(&ret)
+	}
+	tx.Commit()
+	tx = db.Begin()
+	for i, _ := range games {
+		ret := *(games[i]).Bazarek
+		tx.Where("bazarek_ref_id = ?", ret.BazarekRefID).First(&ret)
+		games[i].Bazarek.ID = ret.ID
+		games[i].BazarekID = &ret.ID
+		tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "bazarek_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"name", "bazarek_id"}),
+		}).Create(&games[i])
+	}
+	tx.Commit()
+	e := time.Since(t)
+	logrus.Infof("Saving Game bazareks End! %s", e)
+}
+
+func SaveGameNameWithSteam(toSave chan model.Game) {
+	t := time.Now()
+	logrus.Info("Saving Game steamsId's Start!")
+	db := repository.DB
+	games := make([]model.Game, 0)
+	for g := range toSave {
+		g.Steam.Updated = time.Now()
+		games = append(games, g)
+	}
+
+	tx := db.Begin()
+	for i, _ := range games {
+		ret := *(games[i]).Steam
+		tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "steam_ref_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"price", "updated"}),
+		}).Create(&ret)
+	}
+	tx.Commit()
+
+	tx = db.Begin()
+	for i, _ := range games {
+		bazarId := *(games[i]).BazarekID
+		steamId := games[i].Steam.SteamRefID
+		tx2 := tx.Table("games as g").Where("g.bazarek_id = ?", bazarId)
+		if games[i].Name != "" {
+			tx2.Update("name", games[i].Name)
+		}
+		tx2.Update("steam_id", db.Table("steams").Select("id").Where("steam_ref_id = ?", steamId))
+	}
+	tx.Commit()
+	e := time.Since(t)
+	logrus.Infof("Saving Game steamsId's End! %s", e)
 }
