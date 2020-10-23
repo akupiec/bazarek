@@ -20,9 +20,12 @@ type SearchParams struct {
 	CategoriesAnd bool
 }
 
-func SearchGames(p *SearchParams) []model.Steam {
+func SearchGames(p *SearchParams) []model.Game {
 	db := DB
-	tx := db.Table("Steams AS s")
+	tx := db.Table("Games AS g")
+	tx.Joins("Bazarek")
+	tx.Joins("Steam")
+
 	gameFilterPrice(p.Price, tx)
 	gameFilterName(p.Search, tx)
 	gameFilterTags(p.Tags, p.TagsAnd, tx)
@@ -31,7 +34,7 @@ func SearchGames(p *SearchParams) []model.Steam {
 	gameFilterReviewCount(p.ReviewsCount, tx)
 	includeChildData(p.AllData, tx)
 	gameLimit(p.Limit, tx)
-	var s []model.Steam
+	var s []model.Game
 	tx.Find(&s)
 	return s
 }
@@ -54,37 +57,34 @@ func includeChildData(allData bool, tx *gorm.DB) {
 
 func gameFilterReviewCount(reviewsCount string, tx *gorm.DB) {
 	if reviewsCount != "" {
-		tx.Where("s.reviews_count >= (?)", reviewsCount)
+		tx.Where("g.reviews_count >= (?)", reviewsCount)
 	}
 }
 
 func gameFilterPrice(price string, tx *gorm.DB) {
-	tx.Joins("Bazarek")
 	if price != "" {
-		tx.Where("Bazarek__price < ? OR (s.price IS NOT NULL AND s.price < ? AND s.price != 0)", price, price)
+		tx.Where("Bazarek__price < ? OR (Steam__price IS NOT NULL AND Steam__price < ? AND Steam__price != 0)", price, price)
 	}
 }
 
 func gameFilterReview(reviews []string, _ bool, tx *gorm.DB) {
 	if len(reviews) > 0 {
-		tx.Where("s.id IN (?)", DB.Table("steam_review as sr").
-			Select("sr.steam_id").
-			Where("sr.review_id IN ?", reviews))
+		tx.Where("g.review_id IN (?)", reviews)
 	}
 }
 
 func gameFilterCategory(categories []string, _ bool, tx *gorm.DB) {
 	if len(categories) > 0 {
-		tx.Where("s.id IN (?)", DB.Table("steam_category as sc").
-			Select("sc.steam_id").
+		tx.Where("g.id IN (?)", DB.Table("steam_category as sc").
+			Select("sc.game_id").
 			Where("sc.category_id IN ?", categories))
 	}
 }
 
 func gameFilterTags(tags []string, _ bool, tx *gorm.DB) {
 	if len(tags) > 0 {
-		tx.Where("s.id IN (?)", DB.Table("steam_tag as st").
-			Select("st.steam_id").
+		tx.Where("g.id IN (?)", DB.Table("steam_tag as st").
+			Select("st.game_id").
 			Where("st.tag_id IN ?", tags))
 	}
 }
@@ -95,7 +95,7 @@ func gameFilterName(search string, tx *gorm.DB) {
 		subSearch := strings.Split(search, " ")
 		for _, s := range subSearch {
 			s = "%" + s + "%"
-			tx.Where("s.name LIKE (?)", s)
+			tx.Where("g.name LIKE (?)", s)
 		}
 	}
 }
