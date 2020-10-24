@@ -32,7 +32,7 @@ func SaveGameTagsCategoryReview(toSave chan model.Game) {
 
 	for i, _ := range games {
 		if games[i].Review != nil && games[i].Review.Name != "" && *games[i].ReviewsCount >= 10 {
-			tx.Table("games").Where("id = ?", games[i].ID).Set("review_id", db.Table("reviews").Select("id").Where("name == ?", games[i].Review.Name))
+			tx.Table("games").Where("id = ?", games[i].ID).Update("review_id", db.Table("reviews").Select("id").Where("name == ?", games[i].Review.Name))
 		}
 
 		tx2 := tx.Table("games as g").Where("g.id = ?", games[i].ID)

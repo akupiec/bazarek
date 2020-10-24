@@ -15,7 +15,7 @@ func GetOldSteamsEager(t time.Time) []model.Game {
 
 	tx.Where("(reviews_count IS NULL AND steam_id IS NOT NULL) OR steam_id IN (?)", db.Table("steams as s").Select("s.id").Where("updated < ?", t))
 
-	tx.Preload("Steam").Find(&results)
+	tx.Preload("Steam").Limit(-1).Find(&results)
 
 	return results
 }
