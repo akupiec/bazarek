@@ -53,5 +53,8 @@ func getSteamType(href string) model.SteamType {
 	if strings.Contains(href, "bundle") {
 		return model.SteamBundle
 	}
+	if strings.Contains(href, "sub") {
+		return model.SteamSub
+	}
 	return ""
 }
