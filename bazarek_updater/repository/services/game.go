@@ -11,35 +11,31 @@ import (
 func GetGamesWithMissingSteamsEager() []model.Game {
 	db := repository.DB
 	var results []model.Game
-	db.Model(model.Game{}).Preload("Bazarek").Where("steam_id IS NULL AND bazarek_id IS NOT NULL").Limit(200).Find(&results)
+	db.Model(model.Game{}).Preload("Bazarek").Where("steam_id IS NULL AND bazarek_id IS NOT NULL").Find(&results)
 	return results
 }
 
-func SaveGame(game *model.Game) {
+func SaveGameTagsCategoryReview(toSave chan model.Game) {
 	db := repository.DB
-	if game.Steam != nil && game.Steam.SteamRefID != 0 {
-		var steam model.Steam
-		steam = *game.Steam
-		saveSteam(&steam)
-		game.SteamID = &steam.ID
+	games := make([]model.Game, 0)
+	for g := range toSave {
+		games = append(games, g)
 	}
 
-	if game.Bazarek != nil && game.Bazarek.BazarekRefID != 0 {
-		saveBazarek(game.Bazarek)
-		game.BazarekID = &game.Bazarek.ID
+	tx := db.Begin()
+	for i, _ := range games {
+		games[i].Steam.Updated = time.Now()
+		tx.Model(model.Steam{}).Where("id = ?", games[i].Steam.ID).Select("price", "updated").Updates(&(games[i].Steam))
+
+		if games[i].Review != nil && games[i].Review.Name != "" && *games[i].ReviewsCount > 10 {
+			tx.Table("reviews").Where("name = ?", games[i].Review.Name).First(&(games[i].Review))
+		} else {
+			games[i].Review = nil
+			games[i].ReviewID = nil
+		}
+		tx.Save(&(games[i]))
 	}
-
-	if game.Review != nil && game.Review.Name != "" {
-		r := getReviewByName(db, game.Review.Name)
-		game.ReviewID = &r.ID
-	}
-
-	game.Bazarek = nil
-	game.Review = nil
-	game.Steam = nil
-
-	db.Save(game)
-	logrus.Debugf("game id: %d save done!", game.ID)
+	tx.Commit()
 }
 
 func SaveGameNameWithBazarek(toSave chan model.Game) {

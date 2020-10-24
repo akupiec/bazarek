@@ -12,6 +12,7 @@ import (
 
 func SteamData(games []model.Game) {
 	p := make(chan struct{}, POOL_SIZE)
+	toSave := make(chan model.Game, len(games))
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(games))
@@ -20,20 +21,22 @@ func SteamData(games []model.Game) {
 		go func(game model.Game) {
 			p <- struct{}{}
 			fetchFullGameData(&game)
+			toSave <- game
 			<-p
-			services.SaveGame(&game)
 			utils.ShowProgress(100)
 			wg.Done()
 		}(g)
 	}
 	wg.Wait()
+	close(toSave)
+	services.SaveGameTagsCategoryReview(toSave)
 }
 
 func fetchFullGameData(game *model.Game) *model.Game {
 	err, doc := utils.GetWithCookie(game.Steam.Href, "wants_mature_content=1; birthtime=312850801;")
 	if err != nil {
 		logrus.Error(err)
-		game.Steam = nil
+		game.Steam.SteamType = model.Error
 		*game.ReviewsCount = 0
 		return game
 	}
@@ -59,7 +62,7 @@ func parseSteamBundle(doc *goquery.Document, game *model.Game) *model.Game {
 func parseSteamGame(doc *goquery.Document, game *model.Game) *model.Game {
 	title := doc.Find("title").Text()
 	if title == "Welcome to Steam" {
-		game.Steam = nil
+		game.Steam.SteamType = model.Missing
 		u := uint16(0)
 		game.ReviewsCount = &u
 		return game

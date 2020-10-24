@@ -8,6 +8,8 @@ const (
 	SteamGame   SteamType = "Game"
 	SteamBundle SteamType = "Bundle"
 	SteamSub    SteamType = "Sub"
+	Missing     SteamType = "Missing"
+	Error       SteamType = "Error"
 )
 
 type Steam struct {

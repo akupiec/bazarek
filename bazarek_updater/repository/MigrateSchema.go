@@ -23,5 +23,6 @@ func CreateSchema() {
 	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{6, "Mostly Positive"})
 	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{7, "Positive"})
 	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{8, "Very Positive"})
+	tx.Clauses(clause.OnConflict{DoNothing: true}).Create(model.Review{9, "Overwhelmingly Positive"})
 	tx.Commit()
 }
