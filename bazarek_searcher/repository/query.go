@@ -2,8 +2,10 @@ package repository
 
 import (
 	"arkupiec/bazarek_searcher/model"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 type SearchParams struct {
@@ -21,6 +23,7 @@ type SearchParams struct {
 }
 
 func SearchGames(p *SearchParams) []model.Game {
+	t := time.Now()
 	db := DB
 	tx := db.Table("Games AS g")
 	tx.Joins("Bazarek")
@@ -36,6 +39,8 @@ func SearchGames(p *SearchParams) []model.Game {
 	gameLimit(p.Limit, tx)
 	var s []model.Game
 	tx.Find(&s)
+	e := time.Since(t)
+	logrus.Infof("Query Total Time %s", e)
 	return s
 }
 
@@ -78,14 +83,38 @@ func gameFilterCategory(categories []string, _ bool, tx *gorm.DB) {
 		tx.Where("g.id IN (?)", DB.Table("steam_category as sc").
 			Select("sc.game_id").
 			Where("sc.category_id IN ?", categories))
+	} else if len(categories) > 0 {
+		raw := "SELECT game_id FROM steam_category WHERE category_id = ?"
+		s := make([]interface{}, len(categories))
+		s[0] = categories[0]
+		for i := 1; i < len(categories); i++ {
+			raw += " INTERSECT"
+			raw += " SELECT game_id FROM steam_category WHERE category_id = ?"
+			s[i] = categories[i]
+		}
+		var ids []uint
+		DB.Raw(raw, s...).Scan(&ids)
+		tx.Where("g.id IN (?)", ids)
 	}
 }
 
-func gameFilterTags(tags []string, _ bool, tx *gorm.DB) {
-	if len(tags) > 0 {
+func gameFilterTags(tags []string, and bool, tx *gorm.DB) {
+	if len(tags) > 0 && and == false {
 		tx.Where("g.id IN (?)", DB.Table("steam_tag as st").
 			Select("st.game_id").
 			Where("st.tag_id IN ?", tags))
+	} else if len(tags) > 0 {
+		raw := "SELECT game_id FROM steam_tag WHERE tag_id = ?"
+		s := make([]interface{}, len(tags))
+		s[0] = tags[0]
+		for i := 1; i < len(tags); i++ {
+			raw += " INTERSECT"
+			raw += " SELECT game_id FROM steam_tag WHERE tag_id = ?"
+			s[i] = tags[i]
+		}
+		var ids []uint
+		DB.Raw(raw, s...).Scan(&ids)
+		tx.Where("g.id IN (?)", ids)
 	}
 }
 
