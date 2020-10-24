@@ -11,7 +11,7 @@ import (
 func GetGamesWithMissingSteamsEager() []model.Game {
 	db := repository.DB
 	var results []model.Game
-	db.Model(model.Game{}).Preload("Bazarek").Where("steam_id IS NULL AND bazarek_id IS NOT NULL").Find(&results)
+	db.Model(model.Game{}).Preload("Bazarek").Where("steam_id IS NULL AND bazarek_id IS NOT NULL").Limit(200).Find(&results)
 	return results
 }
 
@@ -84,7 +84,9 @@ func SaveGameNameWithSteam(toSave chan model.Game) {
 	games := make([]model.Game, 0)
 	for g := range toSave {
 		g.Steam.Updated = time.Now()
-		games = append(games, g)
+		if g.Steam.SteamRefID != 0 {
+			games = append(games, g)
+		}
 	}
 
 	tx := db.Begin()
