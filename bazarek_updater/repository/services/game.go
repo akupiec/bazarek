@@ -16,26 +16,35 @@ func GetGamesWithMissingSteamsEager() []model.Game {
 }
 
 func SaveGameTagsCategoryReview(toSave chan model.Game) {
+	t := time.Now()
+	logrus.Info("Start saving Steam specyfic data")
 	db := repository.DB
 	games := make([]model.Game, 0)
 	for g := range toSave {
 		games = append(games, g)
 	}
 
-	tx := db.Begin()
-	for i, _ := range games {
-		games[i].Steam.Updated = time.Now()
-		tx.Model(model.Steam{}).Where("id = ?", games[i].Steam.ID).Select("price", "updated").Updates(&(games[i].Steam))
+	createTagAndCateory(games)
 
-		if games[i].Review != nil && games[i].Review.Name != "" && *games[i].ReviewsCount > 10 {
-			tx.Table("reviews").Where("name = ?", games[i].Review.Name).First(&(games[i].Review))
-		} else {
-			games[i].Review = nil
-			games[i].ReviewID = nil
+	tx := db.Begin()
+	saveJoinsTagAndCategory(games, tx)
+	saveSteamTypes(games, tx)
+
+	for i, _ := range games {
+		if games[i].Review != nil && games[i].Review.Name != "" && *games[i].ReviewsCount >= 10 {
+			tx.Table("games").Where("id = ?", games[i].ID).Set("review_id", db.Table("reviews").Select("id").Where("name == ?", games[i].Review.Name))
 		}
-		tx.Save(&(games[i]))
+
+		tx2 := tx.Table("games as g").Where("g.id = ?", games[i].ID)
+		if games[i].Name != "" {
+			tx2.Select("name", "reviews_count").Save(&(games[i]))
+		} else {
+			tx2.Select("reviews_count").Save(&(games[i]))
+		}
 	}
 	tx.Commit()
+	e := time.Since(t)
+	logrus.Infof("Saving Game End! %s", e)
 }
 
 func SaveGameNameWithBazarek(toSave chan model.Game) {
@@ -44,20 +53,12 @@ func SaveGameNameWithBazarek(toSave chan model.Game) {
 	db := repository.DB
 	games := make([]model.Game, 0)
 	for g := range toSave {
-		g.Bazarek.Updated = time.Now()
 		games = append(games, g)
 	}
 
+	crateBazareks(db, games)
+
 	tx := db.Begin()
-	for i, _ := range games {
-		ret := *(games[i]).Bazarek
-		tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "bazarek_ref_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
-		}).Create(&ret)
-	}
-	tx.Commit()
-	tx = db.Begin()
 	for i, _ := range games {
 		ret := *(games[i]).Bazarek
 		tx.Where("bazarek_ref_id = ?", ret.BazarekRefID).First(&ret)
@@ -79,23 +80,14 @@ func SaveGameNameWithSteam(toSave chan model.Game) {
 	db := repository.DB
 	games := make([]model.Game, 0)
 	for g := range toSave {
-		g.Steam.Updated = time.Now()
 		if g.Steam.SteamRefID != 0 {
 			games = append(games, g)
 		}
 	}
 
-	tx := db.Begin()
-	for i, _ := range games {
-		ret := *(games[i]).Steam
-		tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "steam_ref_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"price", "updated"}),
-		}).Create(&ret)
-	}
-	tx.Commit()
+	createStems(db, games)
 
-	tx = db.Begin()
+	tx := db.Begin()
 	for i, _ := range games {
 		bazarId := *(games[i]).BazarekID
 		steamId := games[i].Steam.SteamRefID

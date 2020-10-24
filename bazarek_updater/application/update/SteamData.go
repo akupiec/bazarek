@@ -79,8 +79,17 @@ func parseSteamGame(doc *goquery.Document, game *model.Game) *model.Game {
 }
 
 func parseSteamPrice(doc *goquery.Document) *float32 {
-	f := utils.FindFloat32(doc.Find(".game_purchase_price.price").Text())
-	return &f
+	f1 := utils.FindFloat32(doc.Find(".game_area_purchase_game_wrapper .discount_final_price").Text())
+	f2 := utils.FindFloat32(doc.Find(".game_purchase_price.price").Text())
+	if f1 != 0 {
+		if f1 < f2 || f2 == 0 {
+			return &f1
+		}
+	}
+	if f2 != 0 {
+		return &f2
+	}
+	return nil
 }
 
 func parseReviews(doc *goquery.Document) (model.Review, uint16) {

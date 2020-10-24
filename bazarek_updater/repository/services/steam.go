@@ -3,6 +3,7 @@ package services
 import (
 	"arkupiec/bazarek_updater/model"
 	"arkupiec/bazarek_updater/repository"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
@@ -19,19 +20,23 @@ func GetOldSteamsEager(t time.Time) []model.Game {
 	return results
 }
 
-func saveSteam(steam *model.Steam) {
-	db := repository.DB
-	steam.Updated = time.Now()
-	if steam.Href != "" {
-		db.Clauses(clause.OnConflict{
+func createStems(db *gorm.DB, games []model.Game) {
+	tx := db.Begin()
+	for i, _ := range games {
+		ret := *(games[i]).Steam
+		ret.Updated = time.Now()
+		tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "steam_ref_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"price", "updated"}),
-		}).Create(steam)
-		if steam.ID == 0 {
-			db.Where("steam_ref_id = ?", steam.SteamRefID).First(steam)
-		}
-		if steam.ID == 0 {
-			panic("what do you think you are doing!")
-		}
+		}).Create(&ret)
+	}
+	tx.Commit()
+}
+
+func saveSteamTypes(games []model.Game, tx *gorm.DB) {
+	for _, g := range games {
+		g.Steam.Updated = time.Now()
+		tx.Model(model.Steam{}).Where("id = ?", g.Steam.ID).Select("price", "updated", "steam_type").Updates(&(g.Steam))
+
 	}
 }

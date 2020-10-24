@@ -5,13 +5,12 @@ import { ReactComponent as StarFill } from './star-fill.svg'
 import './startCell.scss'
 
 export const StarCellRenderer = (rowData) => {
-  const icon = getIcon(rowData.Review[0], )
-  const icon2 = getIcon(rowData.Review[1])
-  return <div className="review-cell"> {icon} {icon2} </div>;
+  const icon = getIcon(rowData.Review)
+  return <div className="review-cell"> {icon} </div>;
 };
 
 const getIcon = (review = {}) => {
-  switch(review.ID) {
+  switch(review?.ID) {
     case 1:
       return <StarFill className="red" title={review.Name}/>
     case 2:

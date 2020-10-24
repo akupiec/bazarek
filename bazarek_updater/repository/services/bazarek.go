@@ -3,6 +3,7 @@ package services
 import (
 	"arkupiec/bazarek_updater/model"
 	"arkupiec/bazarek_updater/repository"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
@@ -21,18 +22,17 @@ func BazarekCleanupOld() {
 	db.Model(&model.Bazarek{}).Where("1 = 1").Updates(map[string]interface{}{"price": "0", "offers": 0, "updated": time.Now()})
 }
 
-func saveBazarek(bazarek *model.Bazarek) {
-	db := repository.DB
-	bazarek.Updated = time.Now()
-
-	a := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&bazarek)
-
-	if a.RowsAffected == 0 {
-		var ret model.Bazarek
-		db.Model(model.Bazarek{}).Where("bazarek_ref_id = (?)", bazarek.BazarekRefID).First(&ret)
-		bazarek.ID = ret.ID
-		db.Save(bazarek)
+func crateBazareks(db *gorm.DB, games []model.Game) {
+	tx := db.Begin()
+	for i, _ := range games {
+		ret := *(games[i]).Bazarek
+		ret.Updated = time.Now()
+		tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "bazarek_ref_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"price", "offers", "updated"}),
+		}).Create(&ret)
 	}
+	tx.Commit()
 }
 
 func BazarekCleanUpIncomplete() {
