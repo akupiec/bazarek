@@ -38,6 +38,8 @@ func SearchGames(p *SearchParams) []model.Game {
 	gameFilterReviewCount(p.ReviewsCount, tx)
 	//includeChildData(p.AllData, tx)
 	gameLimit(p.Limit, tx)
+	tx.Order("g.price asc")
+	tx.Order("g.review_id desc")
 	var s []model.Game
 	tx.Find(&s)
 	e := time.Since(t)
@@ -68,7 +70,7 @@ func gameFilterReviewCount(reviewsCount string, tx *gorm.DB) {
 
 func gameFilterPrice(price string, tx *gorm.DB) {
 	if price != "" {
-		tx.Where("Bazarek__price < ? OR (Steam__price IS NOT NULL AND Steam__price < ? AND Steam__price != 0)", price, price)
+		tx.Where("g.price < ?", price)
 	}
 }
 

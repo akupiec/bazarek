@@ -13,4 +13,5 @@ type Game struct {
 	Tags         []Tag      `gorm:"many2many:steam_tag;"`
 	Category     []Category `gorm:"many2many:steam_category;"`
 	ReviewsCount *uint16
+	Price        *float32
 }

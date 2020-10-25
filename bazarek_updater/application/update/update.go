@@ -24,6 +24,9 @@ func Update() {
 	logrus.Info("Bazarek done!")
 	SteamData(getOldGamesSteams())
 	logrus.Info("Steam done!")
+	logrus.Info("Price check start!")
+	PriceDataUpdate()
+	logrus.Info("Price check done!")
 }
 
 func needBazarekUpdate() bool {
