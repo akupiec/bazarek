@@ -15,6 +15,7 @@ type ToPick struct {
 
 func toPick(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Cache-Control", "max-age=3600")
 
 	resp := ToPick{}
 	db.Model(model.Tag{}).Find(&resp.Tag)

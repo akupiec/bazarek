@@ -28,6 +28,7 @@ func SearchGames(p *SearchParams) []model.Game {
 	tx := db.Table("Games AS g")
 	tx.Joins("Bazarek")
 	tx.Joins("Steam")
+	tx.Joins("Review")
 
 	gameFilterPrice(p.Price, tx)
 	gameFilterName(p.Search, tx)
@@ -35,7 +36,7 @@ func SearchGames(p *SearchParams) []model.Game {
 	gameFilterCategory(p.Categories, p.CategoriesAnd, tx)
 	gameFilterReview(p.Reviews, p.ReviewsAnd, tx)
 	gameFilterReviewCount(p.ReviewsCount, tx)
-	includeChildData(p.AllData, tx)
+	//includeChildData(p.AllData, tx)
 	gameLimit(p.Limit, tx)
 	var s []model.Game
 	tx.Find(&s)
@@ -54,7 +55,6 @@ func gameLimit(i int, tx *gorm.DB) {
 
 func includeChildData(allData bool, tx *gorm.DB) {
 	if allData == true {
-		tx.Preload("Review")
 		tx.Preload("Tags")
 		tx.Preload("Category")
 	}

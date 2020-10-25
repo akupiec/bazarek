@@ -14,8 +14,7 @@ func GetOldSteamsEager(t time.Time) []model.Game {
 	tx := db.Model(model.Game{})
 
 	tx.Where("(reviews_count IS NULL AND steam_id IS NOT NULL) OR steam_id IN (?)", db.Table("steams as s").Select("s.id").Where("updated < ?", t))
-
-	tx.Preload("Steam").Limit(-1).Find(&results)
+	tx.Preload("Steam").Find(&results)
 
 	return results
 }
@@ -37,6 +36,5 @@ func saveSteamTypes(games []model.Game, tx *gorm.DB) {
 	for _, g := range games {
 		g.Steam.Updated = time.Now()
 		tx.Model(model.Steam{}).Where("id = ?", g.Steam.ID).Select("price", "updated", "steam_type").Updates(&(g.Steam))
-
 	}
 }
