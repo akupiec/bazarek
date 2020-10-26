@@ -80,7 +80,7 @@ func SaveGameNameWithSteam(toSave chan model.Game) {
 	db := repository.DB
 	games := make([]model.Game, 0)
 	for g := range toSave {
-		if g.Steam.SteamRefID != 0 {
+		if g.Steam != nil && g.Steam.SteamRefID != 0 {
 			games = append(games, g)
 		}
 	}
