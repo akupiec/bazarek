@@ -3,7 +3,7 @@ import { BazarekTable } from './BazarekTable';
 import { HrefCellRenderer } from './GenericTable/CellRenderers/HrefCellRenderer';
 import { PriceCellRenderer } from './GenericTable/CellRenderers/PriceCellRenderer';
 import { StarCellRenderer } from './GenericTable/CellRenderers/StarCellRenderer';
-import { StatusCellRenderer } from './GenericTable/CellRenderers/StausCellRenderer';
+import { StatusCellRenderer } from './GenericTable/CellRenderers/StatusCellRenderer';
 
 export function BazarekSearch() {
   const columns = [

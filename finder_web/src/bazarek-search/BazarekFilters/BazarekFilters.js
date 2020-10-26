@@ -52,7 +52,9 @@ export function BazarekFilters({ pickers, filters, setFilters }) {
   const gameType = pickers.GameType?.map(t => ({ value: t, label: t }));
   const categories = pickers.Category?.map(parser);
 
-  const onChange = (name) => ev => setFilters({ ...filters, [name]: ev });
+  const onChange = (name) => ev => {
+    return setFilters({ ...filters, [name]: ev });
+  }
   return <div className="grid-filters">
     <AutoSelectAndFilter onChange={onChange('category')} options={categories} and={filters.categoriesAnd} onAndChange={onChange('categoriesAnd')} name="Categories" />
     <AutoSelectFilter onChange={onChange('review')} options={reviews} name="Reviews" />

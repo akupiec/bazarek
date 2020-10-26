@@ -29,11 +29,14 @@ export function BazarekTable({columns}) {
     setFilters(newFilters)
     fetchGames(newFilters).then(g => setGames(g))
   }
+  const doSearch = () => {
+    fetchGames(filters).then(g => setGames(g))
+  }
 
   return (
     <>
       <BazarekFilters pickers={pickers} filters={filters} setFilters={onFilterChange} />
-      <GenericTable data={games} columns={columns} />
+      <GenericTable data={games} columns={columns} onDataChange={doSearch} />
     </>
   );
 }

@@ -35,5 +35,9 @@ func finder(c *gin.Context) {
 		GameType:      gameType,
 	}
 	s := repository.SearchGames(&p)
-	c.JSON(200, s)
+	if s == nil {
+		c.JSON(200, make([]string, 0))
+	} else {
+		c.JSON(200, s)
+	}
 }

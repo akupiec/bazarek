@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { saveCustomGame } from '../../../utils/finder.service';
 import { ReactComponent as Heart } from './heart.svg';
 import { ReactComponent as BagCheck } from './bag-check.svg';
 import { ReactComponent as CartX } from './cart-x.svg';
 import { ReactComponent as XOctagon } from './x-octagon.svg';
 
-export const StatusCellRenderer = (rowData) => {
-  const [data, setData] = useState(rowData);
+export const StatusCellRenderer = (rowData, setRowData) => {
+
   const send = (type) => {
-    const newType = type === data?.type ? undefined : type;
+    const newType = type === rowData?.type ? undefined : type;
     saveCustomGame(rowData.id, newType).then(() => {
-      setData({ ...data, type: newType });
+      setRowData({ ...rowData, type: newType });
     });
   };
   const btnClass = (type) => {
     let str = 'btn btn-outline-secondary';
-    str += type === data?.type ? ' active' : '';
+    str += type === rowData?.type ? ' active' : '';
     return str;
   };
 
