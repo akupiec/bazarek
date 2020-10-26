@@ -9,5 +9,6 @@ import (
 func main() {
 	d := sqlite.Open("../test.db")
 	db := repository.Connect(d)
+	repository.CreateSchema()
 	application.Host(db)
 }

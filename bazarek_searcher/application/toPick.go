@@ -2,28 +2,23 @@ package application
 
 import (
 	"arkupiec/bazarek_searcher/model"
-	"encoding/json"
-	"github.com/sirupsen/logrus"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 type ToPick struct {
 	Tag      []model.Tag
 	Category []model.Category
 	Review   []model.Review
+	GameType []model.GameType
 }
 
-func toPick(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Cache-Control", "max-age=3600")
+func toPick(c *gin.Context) {
+	c.Header("Cache-Control", "max-age=3600")
 
-	resp := ToPick{}
+	resp := ToPick{GameType: model.GetGameTypes()}
 	db.Model(model.Tag{}).Find(&resp.Tag)
 	db.Model(model.Category{}).Find(&resp.Category)
 	db.Model(model.Review{}).Find(&resp.Review)
 
-	er := json.NewEncoder(w).Encode(&resp)
-	if er != nil {
-		logrus.Fatal(er)
-	}
+	c.JSON(200, resp)
 }

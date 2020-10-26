@@ -2,17 +2,14 @@ package repository
 
 import (
 	"arkupiec/bazarek_searcher/model"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strings"
-	"time"
 )
 
 type SearchParams struct {
 	Price         string
 	Search        string
 	Limit         int
-	AllData       bool
 	ReviewsCount  string
 	Reviews       []string
 	ReviewsAnd    bool
@@ -20,10 +17,11 @@ type SearchParams struct {
 	TagsAnd       bool
 	Categories    []string
 	CategoriesAnd bool
+	GameType      []string
+	GameTypeAnd   bool
 }
 
 func SearchGames(p *SearchParams) []model.Game {
-	t := time.Now()
 	db := DB
 	tx := db.Table("Games AS g")
 	tx.Joins("Bazarek")
@@ -36,14 +34,11 @@ func SearchGames(p *SearchParams) []model.Game {
 	gameFilterCategory(p.Categories, p.CategoriesAnd, tx)
 	gameFilterReview(p.Reviews, p.ReviewsAnd, tx)
 	gameFilterReviewCount(p.ReviewsCount, tx)
-	//includeChildData(p.AllData, tx)
 	gameLimit(p.Limit, tx)
 	tx.Order("g.price asc")
 	tx.Order("g.review_id desc")
 	var s []model.Game
 	tx.Find(&s)
-	e := time.Since(t)
-	logrus.Infof("Query Total Time %s", e)
 	return s
 }
 
@@ -52,13 +47,6 @@ func gameLimit(i int, tx *gorm.DB) {
 		tx.Limit(i)
 	} else {
 		tx.Limit(10)
-	}
-}
-
-func includeChildData(allData bool, tx *gorm.DB) {
-	if allData == true {
-		tx.Preload("Tags")
-		tx.Preload("Category")
 	}
 }
 
