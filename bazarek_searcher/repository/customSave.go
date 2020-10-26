@@ -6,7 +6,7 @@ import (
 )
 
 func CustomSave(id string, userId uint64, typeStr string) error {
-	if model.CheckGameType(typeStr) == false {
+	if typeStr != "" && model.CheckGameType(typeStr) == false {
 		return errors.New("Invalid type!")
 	}
 
@@ -17,7 +17,7 @@ func CustomSave(id string, userId uint64, typeStr string) error {
 	}
 
 	tx := DB.Begin()
-	tx.Exec("DELETE FROM custom_games WHERE game_id = ? AND user_id = ?", game.ID, userId)
+	tx.Exec("DELETE FROM custom_games WHERE game_id = ? AND user_id = ?", id, userId)
 	tx.Exec("INSERT OR IGNORE INTO custom_games (game_id, type, user_id) VALUES (?, ?, ?);", id, typeStr, userId)
 	tx.Commit()
 	return nil

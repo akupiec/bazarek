@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"arkupiec/bazarek_searcher/model"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -18,28 +17,33 @@ type SearchParams struct {
 	Categories    []string
 	CategoriesAnd bool
 	GameType      []string
-	GameTypeAnd   bool
 }
 
-func SearchGames(p *SearchParams) []model.Game {
+type GamesResp struct {
+}
+
+func SearchGames(p *SearchParams) []map[string]interface{} {
 	db := DB
 	tx := db.Table("Games AS g")
-	tx.Joins("Bazarek")
-	tx.Joins("Steam")
-	tx.Joins("Review")
+	tx.Joins("LEFT JOIN bazareks ON g.bazarek_id = bazareks.id ")
+	tx.Joins("LEFT JOIN steams ON g.steam_id = steams.id")
+	tx.Joins("LEFT JOIN reviews re ON g.review_id = re.id")
+	tx.Joins("LEFT JOIN custom_games cg ON g.id = cg.game_id")
+	tx.Select("g.id", "g.name", "g.price", "cg.type", "re.name AS review", "re.id AS reviewId", "steams.href as steamHref", "bazareks.href as bazarekHref")
 
 	gameFilterPrice(p.Price, tx)
 	gameFilterName(p.Search, tx)
 	gameFilterTags(p.Tags, p.TagsAnd, tx)
+	gameFilterGameTypes(p.GameType, tx)
 	gameFilterCategory(p.Categories, p.CategoriesAnd, tx)
 	gameFilterReview(p.Reviews, p.ReviewsAnd, tx)
 	gameFilterReviewCount(p.ReviewsCount, tx)
 	gameLimit(p.Limit, tx)
 	tx.Order("g.price asc")
 	tx.Order("g.review_id desc")
-	var s []model.Game
-	tx.Find(&s)
-	return s
+	var results []map[string]interface{}
+	tx.Find(&results)
+	return results
 }
 
 func gameLimit(i int, tx *gorm.DB) {
@@ -105,6 +109,14 @@ func gameFilterTags(tags []string, and bool, tx *gorm.DB) {
 		var ids []uint
 		DB.Raw(raw, s...).Scan(&ids)
 		tx.Where("g.id IN (?)", ids)
+	}
+}
+
+func gameFilterGameTypes(types []string, tx *gorm.DB) {
+	if len(types) > 0 {
+		tx.Where("g.id IN (?)", DB.Table("custom_games as cg").
+			Select("cg.game_id").
+			Where("cg.type IN ?", types))
 	}
 }
 

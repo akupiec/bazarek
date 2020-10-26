@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GenericTable } from './GenericTable/GenericTable';
 import { BazarekFilters } from './BazarekFilters/BazarekFilters';
-import { fetchGames, fetchPickers } from './finder.service';
+import { fetchGames, fetchPickers } from '../utils/finder.service';
 
 export function BazarekTable({columns}) {
   const [games, setGames] = useState([]);
@@ -14,6 +14,7 @@ export function BazarekTable({columns}) {
     review: [],
     tag: [],
     category: [],
+    gameType: [],
     reviewsAnd: false,
     tagsAnd: false,
     categoriesAnd: false,

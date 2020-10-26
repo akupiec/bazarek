@@ -13,7 +13,6 @@ func finder(c *gin.Context) {
 	reviewsAnd, _ := strconv.ParseBool(c.Query("reviewsAnd"))
 	tagsAnd, _ := strconv.ParseBool(c.Query("tagsAnd"))
 	categoriesAnd, _ := strconv.ParseBool(c.Query("categoriesAnd"))
-	gameTypeAnd, _ := strconv.ParseBool(c.Query("gameTypeAnd"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	reviewsCount := c.Query("reviewsCount")
 	search := c.Query("search")
@@ -34,7 +33,6 @@ func finder(c *gin.Context) {
 		Categories:    categories,
 		CategoriesAnd: categoriesAnd,
 		GameType:      gameType,
-		GameTypeAnd:   gameTypeAnd,
 	}
 	s := repository.SearchGames(&p)
 	c.JSON(200, s)

@@ -5,29 +5,29 @@ import { ReactComponent as StarFill } from './star-fill.svg'
 import './startCell.scss'
 
 export const StarCellRenderer = (rowData) => {
-  const icon = getIcon(rowData.Review)
+  const icon = getIcon(rowData.review, rowData.reviewId)
   return <div className="review-cell"> {icon} </div>;
 };
 
-const getIcon = (review = {}) => {
-  switch(review?.ID) {
+const getIcon = (reviewName, reviewId) => {
+  switch(reviewId) {
     case 1:
-      return <StarFill className="red" title={review.Name}/>
+      return <StarFill className="red" title={reviewName}/>
     case 2:
-      return <StarHalf className="red" title={review.Name}/>
+      return <StarHalf className="red" title={reviewName}/>
     case 3:
-      return <Star className="red" title={review.Name}/>
+      return <Star className="red" title={reviewName}/>
     case 4:
-      return <Star title={review.Name}/>
+      return <Star title={reviewName}/>
     case 5:
-      return <StarHalf title={review.Name}/>
+      return <StarHalf title={reviewName}/>
     case 6:
-      return <StarFill title={review.Name}/>
+      return <StarFill title={reviewName}/>
     case 7:
-      return <Star className="gold" title={review.Name}/>
+      return <Star className="gold" title={reviewName}/>
     case 8:
-      return <StarHalf className="gold" title={review.Name}/>
+      return <StarHalf className="gold" title={reviewName}/>
     case 9:
-      return <StarFill className="gold" title={review.Name}/>
+      return <StarFill className="gold" title={reviewName}/>
   }
 }

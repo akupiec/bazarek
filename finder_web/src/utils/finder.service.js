@@ -13,7 +13,15 @@ export function fetchGames(filters) {
   let url = 'http://localhost:9090/finder';
   const params = {
     ...filters,
-    allData: true,
   };
   return axios.get(url, { params, paramsSerializer }).then(resp => resp.data, (e) => console.error(e));
+}
+
+export function saveCustomGame(id, type) {
+  let url = 'http://localhost:9090/saveCustom/' + id;
+  const data = {
+    type,
+    user: 0,
+  };
+  return axios.post(url, data).then(resp => resp.data, (e) => console.error(e));
 }

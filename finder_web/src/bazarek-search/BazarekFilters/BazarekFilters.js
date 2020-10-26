@@ -49,6 +49,7 @@ export function BazarekFilters({ pickers, filters, setFilters }) {
   const parser = t => ({ value: t.ID, label: t.Name });
   const tags = pickers.Tag?.map(parser);
   const reviews = pickers.Review?.map(parser);
+  const gameType = pickers.GameType?.map(t => ({ value: t, label: t }));
   const categories = pickers.Category?.map(parser);
 
   const onChange = (name) => ev => setFilters({ ...filters, [name]: ev });
@@ -60,5 +61,6 @@ export function BazarekFilters({ pickers, filters, setFilters }) {
     <BasicInput name="Max Price" value={filters.price} onChange={onChange('price')} />
     <BasicInput name="Limit" value={filters.limit} onChange={onChange('limit')} />
     <BasicInput name="Search" value={filters.search} onChange={onChange('search')} />
+    <AutoSelectFilter onChange={onChange('gameType')} options={gameType} name="GameType"/>
   </div>;
 }
