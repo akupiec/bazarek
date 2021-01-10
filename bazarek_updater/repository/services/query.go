@@ -1,6 +1,7 @@
-package repository
+package services
 
 import (
+	"arkupiec/bazarek_updater/repository"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -17,13 +18,14 @@ type SearchParams struct {
 	Categories    []string
 	CategoriesAnd bool
 	GameType      []string
+	GameTypeNot   []string
 }
 
 type GamesResp struct {
 }
 
 func SearchGames(p *SearchParams) []map[string]interface{} {
-	db := DB
+	db := repository.DB
 	tx := db.Table("Games AS g")
 	tx.Joins("LEFT JOIN bazareks ON g.bazarek_id = bazareks.id ")
 	tx.Joins("LEFT JOIN steams ON g.steam_id = steams.id")
@@ -74,7 +76,7 @@ func gameFilterReview(reviews []string, _ bool, tx *gorm.DB) {
 
 func gameFilterCategory(categories []string, _ bool, tx *gorm.DB) {
 	if len(categories) > 0 {
-		tx.Where("g.id IN (?)", DB.Table("steam_category as sc").
+		tx.Where("g.id IN (?)", repository.DB.Table("steam_category as sc").
 			Select("sc.game_id").
 			Where("sc.category_id IN ?", categories))
 	} else if len(categories) > 0 {
@@ -87,14 +89,14 @@ func gameFilterCategory(categories []string, _ bool, tx *gorm.DB) {
 			s[i] = categories[i]
 		}
 		var ids []uint
-		DB.Raw(raw, s...).Scan(&ids)
+		repository.DB.Raw(raw, s...).Scan(&ids)
 		tx.Where("g.id IN (?)", ids)
 	}
 }
 
 func gameFilterTags(tags []string, and bool, tx *gorm.DB) {
 	if len(tags) > 0 && and == false {
-		tx.Where("g.id IN (?)", DB.Table("steam_tag as st").
+		tx.Where("g.id IN (?)", repository.DB.Table("steam_tag as st").
 			Select("st.game_id").
 			Where("st.tag_id IN ?", tags))
 	} else if len(tags) > 0 {
@@ -107,14 +109,14 @@ func gameFilterTags(tags []string, and bool, tx *gorm.DB) {
 			s[i] = tags[i]
 		}
 		var ids []uint
-		DB.Raw(raw, s...).Scan(&ids)
+		repository.DB.Raw(raw, s...).Scan(&ids)
 		tx.Where("g.id IN (?)", ids)
 	}
 }
 
 func gameFilterGameTypes(types []string, tx *gorm.DB) {
 	if len(types) > 0 {
-		tx.Where("g.id IN (?)", DB.Table("custom_games as cg").
+		tx.Where("g.id IN (?)", repository.DB.Table("custom_games as cg").
 			Select("cg.game_id").
 			Where("cg.type IN ?", types))
 	}

@@ -16,12 +16,13 @@ func GetGamesWithMissingSteamsEager() []model.Game {
 }
 
 func SaveGameTagsCategoryReview(toSave chan model.Game) {
-	t := time.Now()
-	logrus.Info("Start saving Steam specyfic data")
+	//t := time.Now()
+	//logrus.Info("Start saving Steam specyfic data")
 	db := repository.DB
 	games := make([]model.Game, 0)
-	for g := range toSave {
-		games = append(games, g)
+	length := len(toSave)
+	for i := 0; i < length; i++ {
+		games = append(games, <-toSave)
 	}
 
 	createTagAndCateory(games)
@@ -43,20 +44,15 @@ func SaveGameTagsCategoryReview(toSave chan model.Game) {
 		}
 	}
 	tx.Commit()
-	e := time.Since(t)
-	logrus.Infof("Saving Game End! %s", e)
+	//e := time.Since(t)
+	//logrus.Infof("Saving Game End! %s", e)
 }
 
-func SaveGameNameWithBazarek(toSave chan model.Game) {
+func SaveGameNameWithBazarekId(toSave chan model.Game) {
 	t := time.Now()
 	logrus.Info("Saving Game bazareks Start!")
 	db := repository.DB
-	games := make([]model.Game, 0)
-	for g := range toSave {
-		games = append(games, g)
-	}
-
-	crateBazareks(db, games)
+	games := chanToArr(toSave)
 
 	tx := db.Begin()
 	for i, _ := range games {
@@ -72,6 +68,14 @@ func SaveGameNameWithBazarek(toSave chan model.Game) {
 	tx.Commit()
 	e := time.Since(t)
 	logrus.Infof("Saving Game bazareks End! %s", e)
+}
+
+func chanToArr(toSave chan model.Game) []model.Game {
+	games := make([]model.Game, 0)
+	for g := range toSave {
+		games = append(games, g)
+	}
+	return games
 }
 
 func SaveGameNameWithSteam(toSave chan model.Game) {

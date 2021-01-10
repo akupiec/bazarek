@@ -10,6 +10,15 @@ import (
 	"time"
 )
 
+type FetchError struct {
+	Err error
+	Res *http.Response
+}
+
+func (r *FetchError) Error() string {
+	return fmt.Sprintf("status code error: %s %s", r.Res.Status, r.Res.Request.URL)
+}
+
 type hookLogger struct {
 	retryablehttp.LeveledLogger
 }
@@ -39,7 +48,7 @@ func parseResp(err error, res *http.Response) (error, *goquery.Document) {
 		logrus.Fatalln(err)
 	}
 	if res.StatusCode != 200 {
-		return fmt.Errorf("status code error: %s %s", res.Status, res.Request.URL), nil
+		return &FetchError{Res: res}, nil
 	}
 
 	defer res.Body.Close()
@@ -62,13 +71,15 @@ func createClient(min time.Duration, max time.Duration, retry int) *retryablehtt
 	client.RetryWaitMax = max
 	client.RetryMax = retry
 	client.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		// do not retry on context.Canceled or context.DeadlineExceeded
 		if ctx.Err() != nil {
+			// do not retry on context.Canceled or context.DeadlineExceeded
 			return false, ctx.Err()
 		}
 
 		if err != nil {
-			return true, fmt.Errorf("unexpected HTTP error %v", err)
+			// retry on strange stuff...
+			logrus.Warnf("RETRY: unexpected HTTP error %v", err)
+			return true, err
 		}
 
 		if resp.StatusCode != 200 && resp.StatusCode != 403 {
@@ -85,9 +96,15 @@ func Fetch(u string) (error, *goquery.Document) {
 }
 
 func GetWithCookie(url string, cookie string) (error, *goquery.Document) {
-	req, _ := retryablehttp.NewRequest("GET", url, nil)
+	req, err := retryablehttp.NewRequest("GET", url, nil)
+	if err != nil {
+		return err, nil
+	}
 	client := createClient(500*time.Millisecond, 800*time.Millisecond, 5)
 	req.Header.Set("Cookie", cookie)
 	res, err := client.Do(req)
+	if err != nil {
+		return err, nil
+	}
 	return parseResp(err, res)
 }

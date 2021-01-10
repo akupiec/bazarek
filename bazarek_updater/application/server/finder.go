@@ -1,7 +1,7 @@
-package application
+package server
 
 import (
-	"arkupiec/bazarek_searcher/repository"
+	"arkupiec/bazarek_updater/repository/services"
 	"github.com/gin-gonic/gin"
 	"net/url"
 	"strconv"
@@ -21,7 +21,7 @@ func finder(c *gin.Context) {
 	gameType := q["gameType"]
 	reviews := q["review"]
 
-	p := repository.SearchParams{
+	p := services.SearchParams{
 		Price:         price,
 		Search:        search,
 		Limit:         limit,
@@ -34,7 +34,7 @@ func finder(c *gin.Context) {
 		CategoriesAnd: categoriesAnd,
 		GameType:      gameType,
 	}
-	s := repository.SearchGames(&p)
+	s := services.SearchGames(&p)
 	if s == nil {
 		c.JSON(200, make([]string, 0))
 	} else {

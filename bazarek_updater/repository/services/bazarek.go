@@ -3,7 +3,6 @@ package services
 import (
 	"arkupiec/bazarek_updater/model"
 	"arkupiec/bazarek_updater/repository"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
@@ -22,7 +21,10 @@ func BazarekCleanupOld() {
 	db.Model(&model.Bazarek{}).Where("1 = 1").Updates(map[string]interface{}{"price": "0", "offers": 0, "updated": time.Now()})
 }
 
-func crateBazareks(db *gorm.DB, games []model.Game) {
+func SaveBazareks(toSave chan model.Game) {
+	db := repository.DB
+	games := chanToArr(toSave)
+
 	tx := db.Begin()
 	for i, _ := range games {
 		ret := *(games[i]).Bazarek
@@ -33,9 +35,4 @@ func crateBazareks(db *gorm.DB, games []model.Game) {
 		}).Create(&ret)
 	}
 	tx.Commit()
-}
-
-func BazarekCleanUpIncomplete() {
-	//db := repository.DB
-	//db.Where("offers = 0").Delete(&model.Bazarek{})
 }

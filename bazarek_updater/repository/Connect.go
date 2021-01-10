@@ -5,14 +5,14 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"os"
 	"time"
 )
-
 
 var DB *gorm.DB
 
 func Connect() {
-	d := sqlite.Open("../test.db")
+	d := sqlite.Open(getPath())
 	newLogger := logger.New(
 		logrus.New(),
 		logger.Config{
@@ -27,4 +27,12 @@ func Connect() {
 		panic("failed to connect database")
 	}
 	DB = db
+}
+
+func getPath() string {
+	path_dst := os.Getenv("PATH_DSN")
+	if path_dst != "" {
+		return path_dst
+	}
+	return "../test.db"
 }

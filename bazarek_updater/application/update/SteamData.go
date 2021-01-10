@@ -11,8 +11,8 @@ import (
 )
 
 func SteamData(games []model.Game) {
-	p := make(chan struct{}, POOL_SIZE)
-	toSave := make(chan model.Game, len(games))
+	p := make(chan struct{}, FETCH_POOL_SIZE)
+	toSave := make(chan model.Game, SAVE_POOL_SIZE)
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(games))
@@ -21,8 +21,11 @@ func SteamData(games []model.Game) {
 		go func(game model.Game) {
 			p <- struct{}{}
 			fetchFullGameData(&game)
-			toSave <- game
 			<-p
+			toSave <- game
+			if len(toSave) == cap(toSave) {
+				services.SaveGameTagsCategoryReview(toSave)
+			}
 			utils.ShowProgress(100)
 			wg.Done()
 		}(g)

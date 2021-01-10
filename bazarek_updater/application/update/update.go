@@ -8,25 +8,37 @@ import (
 )
 
 const MAX_BAZAREK_PAGES int = 120
-const POOL_SIZE int = 20
+const FETCH_POOL_SIZE int = 20
+const SAVE_POOL_SIZE int = 100
 const UPDATE_TRESSHOLD_HOURS = 12
 const STEAM_UPDATE_TRESSHOLD_DAYS = 4
 
 func Update() {
-	if needBazarekUpdate() {
-		services.BazarekCleanupOld()
-		logrus.Info("Downloading new pages!")
-		BazarekGeneralData()
-		logrus.Info("Downloading missing steamIds")
-		BazarekSteamId()
-		services.BazarekCleanUpIncomplete()
-	}
-	logrus.Info("Bazarek done!")
-	SteamData(getOldGamesSteams())
-	logrus.Info("Steam done!")
-	logrus.Info("Price check start!")
+	UpdateBazarek()
+	UpdateSteam()
+
 	PriceDataUpdate()
 	logrus.Info("Price check done!")
+}
+
+func UpdateSteam() {
+	toUpdate := getOldGamesSteams()
+	if len(toUpdate) > 0 {
+		logrus.Info("Downloading steam data!")
+		SteamData(toUpdate)
+	}
+	logrus.Info("Steam done!")
+}
+
+func UpdateBazarek() {
+	if needBazarekUpdate() {
+		services.BazarekCleanupOld()
+		logrus.Info("Bazarek: Downloading new pages!")
+		BazarekGeneralData()
+		logrus.Info("Bazarek: Downloading steamIds")
+		BazarekSteamId()
+	}
+	logrus.Info("Bazarek done!")
 }
 
 func needBazarekUpdate() bool {

@@ -10,9 +10,14 @@ import (
 )
 
 func BazarekSteamId() {
+	toSave := getGameDataToSave()
+	services.SaveGameNameWithSteam(toSave)
+}
+
+func getGameDataToSave() chan model.Game {
 	games := services.GetGamesWithMissingSteamsEager()
 	toSave := make(chan model.Game, len(games))
-	p := make(chan struct{}, POOL_SIZE)
+	p := make(chan struct{}, FETCH_POOL_SIZE)
 	var wg sync.WaitGroup
 
 	utils.StartProgress(len(games))
@@ -30,13 +35,18 @@ func BazarekSteamId() {
 	wg.Wait()
 
 	close(toSave)
-	services.SaveGameNameWithSteam(toSave)
+	return toSave
 }
 
 func fetchGameInfo(game *model.Game) {
 	err, doc := utils.Fetch("https://bazar.lowcygier.pl" + game.Bazarek.Href)
 	if err != nil {
-		logrus.Error(err)
+		re := err.(*utils.FetchError)
+		if re.Res != nil && re.Res.StatusCode == 403 {
+			logrus.Warn(err)
+		} else {
+			logrus.Error(err)
+		}
 		return
 	}
 	steamHref, _ := doc.Find(".fa.fa-steam").Parent().Attr("href")
